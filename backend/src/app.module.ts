@@ -1,15 +1,13 @@
 import { Module } from '@nestjs/common';
-import { AppController } from './app.controller';
-import { AppService } from './app.service';
-import { MongooseModule } from '@nestjs/mongoose/dist/mongoose.module';
+import { MongooseModule } from '@nestjs/mongoose';
+import { AssetsModule } from './assets/assets.module'; // <--- Ez kell!
 
 @Module({
   imports: [
     MongooseModule.forRoot(
-      'mongodb://mongodb:27017/asset-manager',
+      process.env.MONGO_URI || 'mongodb://mongodb:27017/asset-manager',
     ),
+    AssetsModule,
   ],
-  controllers: [AppController],
-  providers: [AppService],
 })
 export class AppModule {}
