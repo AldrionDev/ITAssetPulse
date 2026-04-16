@@ -13,7 +13,6 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
-    restart: always
 
   backend:
     build:
@@ -29,7 +28,6 @@ services:
     depends_on:
       mongodb:
         condition: service_healthy
-    restart: on-failure
 
   frontend:
     build:
@@ -38,11 +36,14 @@ services:
     container_name: asset-frontend
     ports:
       - "5173:5173"
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
     networks:
       - asset-network
     depends_on:
       - backend
-    restart: always
+
 networks:
   asset-network:
     driver: bridge
