@@ -1,4 +1,12 @@
-import { Controller, Get, Post, Body } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Param,
+  Patch,
+  Delete,
+} from '@nestjs/common';
 import { CreateAssetDto } from './dto/create-asset.dto';
 import { AssetsService } from './assets.service';
 
@@ -14,5 +22,18 @@ export class AssetsController {
   @Get()
   async findAll() {
     return this.assetsService.findAll();
+  }
+
+  @Patch(':id')
+  async update(
+    @Param('id') id: string,
+    @Body() updateData: Partial<CreateAssetDto>,
+  ) {
+    return this.assetsService.update(id, updateData);
+  }
+
+  @Delete(':id')
+  async remove(@Param('id') id: string) {
+    return this.assetsService.delete(id);
   }
 }
