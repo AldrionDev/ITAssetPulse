@@ -53,7 +53,7 @@ export const AssetTable = ({ assets, onDelete, onUpdate }: AssetTableProps) => {
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-4">
-                      {/* Kattintható QR ikon */}
+                      {/* Clickable QR icon */}
                       <div
                         onClick={() => setSelectedQR(asset)}
                         className="cursor-pointer p-1.5 bg-white border border-gray-200 rounded-lg hover:border-indigo-500 transition-all active:scale-90"
@@ -75,9 +75,9 @@ export const AssetTable = ({ assets, onDelete, onUpdate }: AssetTableProps) => {
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">
                     {asset.status === "Available"
-                      ? "IT stock - Budapest"
+                      ? "IT Stock-Budapest"
                       : asset.status === "Under Repair"
-                        ? "IT Department Global"
+                        ? "IT Department-Global"
                         : asset.location || "-"}
                   </td>
                   <td className="px-6 py-4">
@@ -121,7 +121,7 @@ export const AssetTable = ({ assets, onDelete, onUpdate }: AssetTableProps) => {
         </table>
       </div>
 
-      {/* QR MODAL MEGJELENÍTÉSE */}
+      {/* QR MODAL */}
       {selectedQR && (
         <QRModal asset={selectedQR} onClose={() => setSelectedQR(null)} />
       )}
