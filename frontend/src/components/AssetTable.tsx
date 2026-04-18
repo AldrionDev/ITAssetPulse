@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { QRModal } from "./QRModal"; // Fontos: beimportáljuk a fenti komponenst!
+import { QRModal } from "./QRModal";
 
 interface Asset {
   _id: string;
