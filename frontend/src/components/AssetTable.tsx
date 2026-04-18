@@ -53,6 +53,7 @@ export const AssetTable = ({ assets, onDelete, onUpdate }: AssetTableProps) => {
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-4">
+                      {/* Clickable QR icon */}
                       <div
                         onClick={() => setSelectedQR(asset)}
                         className="cursor-pointer p-1.5 bg-white border border-gray-200 rounded-lg hover:border-indigo-500 transition-all active:scale-90"
@@ -119,6 +120,8 @@ export const AssetTable = ({ assets, onDelete, onUpdate }: AssetTableProps) => {
           </tbody>
         </table>
       </div>
+
+      {/* QR MODAL */}
       {selectedQR && (
         <QRModal asset={selectedQR} onClose={() => setSelectedQR(null)} />
       )}

@@ -57,14 +57,14 @@ async function bootstrap() {
       name: 'Dell 130W USB-C Power Adapter',
       category: 'Power supply',
       serialNumber: 'PS-2024-007',
-      location: 'Budapest Office',
+      location: 'Paris Office',
       status: 'Available',
     },
     {
       name: 'Dell WD19TB Thunderbolt Dock',
       category: 'Docking station',
       serialNumber: 'DS-2024-008',
-      location: 'Munich Office',
+      location: 'Budapest Office',
       status: 'In Use',
     },
     {
@@ -80,13 +80,6 @@ async function bootstrap() {
       serialNumber: 'KB-2024-010',
       location: 'Paris Office',
       status: 'Available',
-    },
-    {
-      name: 'Lenovo ThinkPad X1 Carbon Gen 9',
-      category: 'Laptop',
-      serialNumber: 'LN-2024-011',
-      location: 'Paris Office',
-      status: 'Under Repair',
     },
   ];
 
