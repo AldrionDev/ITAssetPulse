@@ -27,3 +27,7 @@ To start the ITAssetPulse application, follow these steps:
 6. login credentials:
    - Username: admin
    - Password: secret123
+7. Seed the database with demo data:
+   ```bash
+   docker-compose exec backend npm run seed
+   ```

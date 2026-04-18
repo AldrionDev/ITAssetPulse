@@ -8,7 +8,7 @@ interface AssetFormProps {
 export const AssetForm = ({ onAdd, onCancel }: AssetFormProps) => {
   const [name, setName] = useState("");
   const [serialNumber, setSerialNumber] = useState("");
-  const [category, setCategory] = useState("Hardware");
+  const [category, setCategory] = useState("Laptop");
   const [status, setStatus] = useState("Available");
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -62,9 +62,12 @@ export const AssetForm = ({ onAdd, onCancel }: AssetFormProps) => {
             onChange={(e) => setCategory(e.target.value)}
             className="w-full border-gray-200 border rounded-xl p-3 bg-white outline-none"
           >
-            <option value="Hardware">Hardware</option>
-            <option value="Software">Software</option>
-            <option value="Peripherals">Peripherals</option>
+            <option value="Laptop">Laptop</option>
+            <option value="Monitor">Monitor</option>
+            <option value="Mouse">Mouse</option>
+            <option value="Keyboard">Keyboard</option>
+            <option value="Power supply">Power supply</option>
+            <option value="Docking station">Docking station</option>
           </select>
         </div>
         <div>
