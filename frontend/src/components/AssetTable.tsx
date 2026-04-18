@@ -8,6 +8,7 @@ interface Asset {
   serialNumber: string;
   category: string;
   status: string;
+  location?: string;
 }
 
 interface AssetTableProps {
@@ -31,6 +32,9 @@ export const AssetTable = ({ assets, onDelete, onUpdate }: AssetTableProps) => {
               </th>
               <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
                 Category
+              </th>
+              <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                Location
               </th>
               <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
                 Status
@@ -69,6 +73,13 @@ export const AssetTable = ({ assets, onDelete, onUpdate }: AssetTableProps) => {
                   <td className="px-6 py-4 text-sm text-gray-600">
                     {asset.category}
                   </td>
+                  <td className="px-6 py-4 text-sm text-gray-600">
+                    {asset.status === "Available"
+                      ? "IT stock - Budapest"
+                      : asset.status === "Under Repair"
+                        ? "IT Department Global"
+                        : asset.location || "-"}
+                  </td>
                   <td className="px-6 py-4">
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-bold border ${
@@ -99,7 +110,7 @@ export const AssetTable = ({ assets, onDelete, onUpdate }: AssetTableProps) => {
             ) : (
               <tr>
                 <td
-                  colSpan={4}
+                  colSpan={5}
                   className="px-6 py-12 text-center text-gray-400"
                 >
                   No assets found.
