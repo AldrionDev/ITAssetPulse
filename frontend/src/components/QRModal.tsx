@@ -54,7 +54,7 @@ export const QRModal = ({ asset, onClose }: QRModalProps) => {
   };
 
   return (
-    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[100] p-4">
+    <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-100 p-4">
       <div className="bg-white p-8 rounded-3xl shadow-2xl w-full max-w-sm text-center">
         <h3 className="text-2xl font-bold text-gray-800 mb-1">{asset.name}</h3>
         <p className="text-gray-500 mb-6 font-mono text-sm">

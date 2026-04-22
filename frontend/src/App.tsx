@@ -23,7 +23,7 @@ function App() {
       setToken(response.data.access_token);
       setIsAuthenticated(true);
       setLoginError(null);
-    } catch (error) {
+    } catch {
       setLoginError("Invalid username or password!");
     }
   };
@@ -103,7 +103,7 @@ function App() {
     if (isAuthenticated) {
       fetchAssets();
     }
-  }, [isAuthenticated]);
+  }, [isAuthenticated, fetchAssets]);
 
   // LOGIN VIEW
   if (!isAuthenticated) {
