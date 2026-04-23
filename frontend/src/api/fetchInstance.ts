@@ -1,24 +1,8 @@
 const BASE_URL = "http://localhost:3000";
 
-export class ApiError extends Error {
-  public status: number;
-  public data?: unknown;
-
-  constructor(
-    status: number,
-    message: string,
-    data?: unknown
-  ) {
-    super(message);
-    this.name = "ApiError";
-    this.status = status;
-    this.data = data;
-  }
-}
-
 export const apiFetch = async <T>(
   endpoint: string,
-  options: RequestInit & { body?: unknown } = {}
+  options: RequestInit & { body?: unknown } = {},
 ): Promise<T> => {
   const token = localStorage.getItem("token");
 
@@ -35,21 +19,17 @@ export const apiFetch = async <T>(
   });
 
   if (!response.ok) {
-    let errorData: unknown = null;
+    let message = `HTTP ${response.status}`;
     try {
-      errorData = await response.json();
+      const errorData = await response.json();
+      message = errorData?.message ?? message;
     } catch {
-      errorData = { message: response.statusText };
+      // Ignore JSON parsing errors and use the default message
     }
-
-    const message =
-      (errorData as { message?: string })?.message ??
-      `HTTP ${response.status}: ${response.statusText}`;
-
-    throw new ApiError(response.status, message, errorData);
+    throw new Error(message);
   }
 
-  if (response.status === 204 || response.headers.get("content-length") === "0") {
+  if (response.status === 204) {
     return null as T;
   }
 
