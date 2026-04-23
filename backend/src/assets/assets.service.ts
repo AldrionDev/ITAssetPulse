@@ -14,10 +14,9 @@ export class AssetsService {
     @InjectModel(Asset.name) private assetModel: Model<AssetDocument>,
   ) {}
 
-  async create(createAssetDto: CreateAssetDto): Promise<Asset> {
+  async create(dto: CreateAssetDto): Promise<Asset> {
     try {
-      const createdAsset = new this.assetModel(createAssetDto);
-      return await createdAsset.save();
+      return await new this.assetModel(dto).save();
     } catch (error: any) {
       if (error.code === 11000) {
         throw new ConflictException('Serial number already exists');
@@ -30,21 +29,23 @@ export class AssetsService {
     return this.assetModel.find().exec();
   }
 
-  async update(id: string, updateData: any): Promise<Asset> {
-    const updatedAsset = await this.assetModel
-      .findByIdAndUpdate(id, updateData, { new: true })
+  async update(id: string, data: Partial<CreateAssetDto>): Promise<Asset> {
+    const asset = await this.assetModel
+      .findByIdAndUpdate(id, data, { new: true })
       .exec();
-    if (!updatedAsset) {
-      throw new NotFoundException(`Asset with ID ${id} not found`);
+
+    if (!asset) {
+      throw new NotFoundException(`Asset ${id} not found`);
     }
-    return updatedAsset;
+
+    return asset;
   }
 
-  async delete(id: string): Promise<Asset> {
+  async delete(id: string): Promise<void> {
     const result = await this.assetModel.findByIdAndDelete(id).exec();
+
     if (!result) {
-      throw new NotFoundException(`Asset with ID ${id} not found`);
+      throw new NotFoundException(`Asset ${id} not found`);
     }
-    return result;
   }
 }

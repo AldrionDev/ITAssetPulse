@@ -7,10 +7,12 @@ import {
   Patch,
   Delete,
   UseGuards,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
-import { CreateAssetDto } from './dto/create-asset.dto';
-import { AssetsService } from './assets.service';
 import { AuthGuard } from '@nestjs/passport';
+import { AssetsService } from './assets.service';
+import { CreateAssetDto } from './dto/create-asset.dto';
 
 @UseGuards(AuthGuard('jwt'))
 @Controller('assets')
@@ -18,25 +20,23 @@ export class AssetsController {
   constructor(private readonly assetsService: AssetsService) {}
 
   @Post()
-  async create(@Body() createAssetDto: CreateAssetDto) {
-    return this.assetsService.create(createAssetDto);
+  create(@Body() dto: CreateAssetDto) {
+    return this.assetsService.create(dto);
   }
 
   @Get()
-  async findAll() {
+  findAll() {
     return this.assetsService.findAll();
   }
 
   @Patch(':id')
-  async update(
-    @Param('id') id: string,
-    @Body() updateData: Partial<CreateAssetDto>,
-  ) {
-    return this.assetsService.update(id, updateData);
+  update(@Param('id') id: string, @Body() data: Partial<CreateAssetDto>) {
+    return this.assetsService.update(id, data);
   }
 
   @Delete(':id')
-  async remove(@Param('id') id: string) {
+  @HttpCode(HttpStatus.NO_CONTENT)
+  delete(@Param('id') id: string) {
     return this.assetsService.delete(id);
   }
 }
