@@ -7,7 +7,7 @@ export const fetchAllAssets = (): Promise<Asset[]> =>
 export const createAsset = (asset: NewAsset): Promise<Asset> =>
   apiFetch<Asset>("/assets", {
     method: "POST",
-    body: JSON.stringify(asset),
+    body: asset,
   });
 
 export const deleteAsset = (id: string): Promise<null> =>
@@ -18,5 +18,5 @@ export const deleteAsset = (id: string): Promise<null> =>
 export const updateAsset = (id: string, data: Partial<Asset>): Promise<Asset> =>
   apiFetch<Asset>(`/assets/${id}`, {
     method: "PATCH",
-    body: JSON.stringify(data),
+    body: data,
   });

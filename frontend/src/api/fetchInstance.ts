@@ -2,7 +2,7 @@ const BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:3000";
 
 export const apiFetch = async <T>(
   endpoint: string,
-  options: RequestInit & { body?: unknown } = {},
+  options: Omit<RequestInit, "body"> & { body?: unknown } = {},
 ): Promise<T> => {
   const token = localStorage.getItem("token");
 
