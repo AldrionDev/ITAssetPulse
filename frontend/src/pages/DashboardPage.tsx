@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "../hooks/useAuth";
+import { useAuth } from "../context/AuthContext";
 import { useAssets } from "../hooks/useAssets";
 import { AssetForm } from "../components/AssetForm";
 import { AssetTable } from "../components/AssetTable";
@@ -26,7 +26,7 @@ const DashboardPage = () => {
         <header className="flex justify-between items-center mb-10">
           <div>
             <h1 className="text-4xl font-extrabold text-indigo-700 tracking-tight">
-              ITAssetPulse
+              IT Asset Pulse
             </h1>
             <p className="text-gray-600 font-medium">
               IT Department Asset Management
