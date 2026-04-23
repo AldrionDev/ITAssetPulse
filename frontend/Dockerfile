@@ -1,13 +1,29 @@
-FROM node:20-alpine
+# ============================================
+# DEVELOPMENT STAGE - Build application
+# ============================================
+FROM node:20-alpine AS development
 
 WORKDIR /app
 
+# Copy package files and install dependencies
 COPY package*.json ./
+RUN npm ci
 
-RUN npm ci && npm cache clean --force
-
+# Copy source code and build
 COPY . .
+RUN npm run build
 
-EXPOSE 5173
+# ============================================
+# PRODUCTION STAGE - Serve with nginx
+# ============================================
+FROM nginx:alpine AS production
 
-CMD ["npm", "run", "dev", "--", "--host"]
+# Copy built assets
+COPY --from=development /app/dist /usr/share/nginx/html
+
+# Copy nginx configuration
+COPY nginx.conf /etc/nginx/conf.d/default.conf
+
+EXPOSE 80
+
+CMD ["nginx", "-g", "daemon off;"]
