@@ -1,20 +1,12 @@
 import { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
-import { QRModal } from "./QRModal"; // Fontos: beimportáljuk a fenti komponenst!
-
-interface Asset {
-  _id: string;
-  name: string;
-  serialNumber: string;
-  category: string;
-  status: string;
-  location?: string;
-}
+import { QRModal } from "./QRModal";
+import type { Asset } from "../types/asset.types";
 
 interface AssetTableProps {
   assets: Asset[];
   onDelete: (id: string) => Promise<void>;
-  onUpdate: (id: string, data: any) => Promise<void>;
+  onUpdate: (id: string, data: Partial<Asset>) => Promise<void>;
 }
 
 export const AssetTable = ({ assets, onDelete, onUpdate }: AssetTableProps) => {
@@ -53,7 +45,6 @@ export const AssetTable = ({ assets, onDelete, onUpdate }: AssetTableProps) => {
                 >
                   <td className="px-6 py-4">
                     <div className="flex items-center gap-4">
-                      {/* Clickable QR icon */}
                       <div
                         onClick={() => setSelectedQR(asset)}
                         className="cursor-pointer p-1.5 bg-white border border-gray-200 rounded-lg hover:border-indigo-500 transition-all active:scale-90"
@@ -121,12 +112,10 @@ export const AssetTable = ({ assets, onDelete, onUpdate }: AssetTableProps) => {
         </table>
       </div>
 
-      {/* QR MODAL */}
       {selectedQR && (
         <QRModal asset={selectedQR} onClose={() => setSelectedQR(null)} />
       )}
 
-      {/* EDIT MODAL */}
       {editingAsset && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md">

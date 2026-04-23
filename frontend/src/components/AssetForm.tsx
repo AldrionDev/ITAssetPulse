@@ -1,7 +1,8 @@
 import { useState } from "react";
+import type { NewAsset } from "../types/asset.types";
 
 interface AssetFormProps {
-  onAdd: (asset: any) => Promise<void>;
+  onAdd: (asset: NewAsset) => Promise<void>;
   onCancel: () => void;
 }
 

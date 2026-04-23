@@ -1,5 +1,5 @@
 import { useState, useCallback } from "react";
-import { Asset, NewAsset } from "../types/asset.types";
+import type { Asset, NewAsset } from "../types/asset.types";
 import {
   fetchAllAssets,
   createAsset,
