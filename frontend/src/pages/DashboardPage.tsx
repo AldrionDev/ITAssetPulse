@@ -1,7 +1,9 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { useAssets } from "../hooks/useAssets";
+import { useAssetFilter } from "../hooks/useAssetFilter";
 import { AssetForm } from "../components/AssetForm";
+import { AssetFilter } from "../components/AssetFilter";
 import { AssetTable } from "../components/AssetTable";
 import type { NewAsset } from "../types/asset.types";
 
@@ -10,6 +12,18 @@ const DashboardPage = () => {
   const { assets, loading, loadAssets, addAsset, removeAsset, editAsset } =
     useAssets();
   const [showForm, setShowForm] = useState(false);
+
+  const {
+    filters,
+    filteredAssets,
+    availableCategories,
+    availableStatuses,
+    updateFilter,
+    resetFilters,
+    hasActiveFilters,
+    totalCount,
+    filteredCount,
+  } = useAssetFilter(assets);
 
   useEffect(() => {
     loadAssets();
@@ -57,13 +71,24 @@ const DashboardPage = () => {
           />
         )}
 
+        <AssetFilter
+          filters={filters}
+          availableCategories={availableCategories}
+          availableStatuses={availableStatuses}
+          onFilterChange={updateFilter}
+          onReset={resetFilters}
+          hasActiveFilters={hasActiveFilters}
+          totalCount={totalCount}
+          filteredCount={filteredCount}
+        />
+
         {loading ? (
           <div className="text-center py-20 text-indigo-600 font-bold animate-pulse text-lg">
             Synchronizing with database...
           </div>
         ) : (
           <AssetTable
-            assets={assets}
+            assets={filteredAssets}
             onDelete={removeAsset}
             onUpdate={editAsset}
           />
