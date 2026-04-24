@@ -6,9 +6,7 @@ IT Asset Pulse is a comprehensive IT Asset Management (ITAM) solution prototype.
 The goal of this demo is to showcase a system that provides real-time visibility into IT investments, streamlines tracking processes, and supports data-driven decision-making to maximize ROI
 
 ## Start application
-
 To start the ITAssetPulse application, follow these steps:
-
 1. Clone the repository:
    ```bash
    git clone
@@ -27,10 +25,15 @@ To start the ITAssetPulse application, follow these steps:
    ```
 5. Access the application:
    Open your web browser and navigate to `http://localhost:5173` to access the ITAssetPulse application.
-6. login credentials:
-   - Username: admin
-   - Password: secret123
+6. login credentials can be found in .env file. 
 7. Seed the database with demo data:
    ```bash
    docker-compose exec backend npm run seed
    ```
+## Roadmap: 
+ - [] Add search bar
+ - [] Dashboard cards
+ - [] Asset detail page
+ - [] Asset history / audit log
+ - [] Role-based auth
+ - [] QR scanner
