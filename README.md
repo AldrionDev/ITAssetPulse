@@ -1,6 +1,9 @@
-# ITAssetPulse
+# IT Asset Pulse (Demo project)
 
-ITAssetPulse is a comprehensive IT asset management solution designed to help organizations efficiently track, manage, and optimize their IT assets throughout their lifecycle. With ITAssetPulse, businesses can gain real-time visibility into their IT infrastructure, streamline asset tracking processes, and make informed decisions to maximize the value of their IT investments.
+## Project overview
+IT Asset Pulse is a comprehensive IT Asset Management (ITAM) solution prototype. I developed this project to demonstrate how organizations can efficiently track, manage, and optimize their IT infrastructure throughout the entire asset lifecycle.
+
+The goal of this demo is to showcase a system that provides real-time visibility into IT investments, streamlines tracking processes, and supports data-driven decision-making to maximize ROI
 
 ## Start application
 
