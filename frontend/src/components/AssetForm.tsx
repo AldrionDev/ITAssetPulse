@@ -1,5 +1,6 @@
 import { useState } from "react";
 import type { NewAsset } from "../types/asset.types";
+import { ASSET_STATUS_OPTIONS } from "../constants/assetStatus";
 
 interface AssetFormProps {
   onAdd: (asset: NewAsset) => Promise<void>;
@@ -10,7 +11,7 @@ export const AssetForm = ({ onAdd, onCancel }: AssetFormProps) => {
   const [name, setName] = useState("");
   const [serialNumber, setSerialNumber] = useState("");
   const [category, setCategory] = useState("Laptop");
-  const [status, setStatus] = useState("available");
+  const [status, setStatus] = useState(ASSET_STATUS_OPTIONS[0].value);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -18,7 +19,7 @@ export const AssetForm = ({ onAdd, onCancel }: AssetFormProps) => {
     setName("");
     setSerialNumber("");
     setCategory("Laptop");
-    setStatus("available");
+    setStatus(ASSET_STATUS_OPTIONS[0].value);
   };
 
   return (
@@ -86,9 +87,11 @@ export const AssetForm = ({ onAdd, onCancel }: AssetFormProps) => {
             onChange={(e) => setStatus(e.target.value)}
             className="w-full border-gray-200 border rounded-xl p-3 bg-white outline-none"
           >
-            <option value="available">Available</option>
-            <option value="assigned">Assigned</option>
-            <option value="maintenance">Maintenance</option>
+            {ASSET_STATUS_OPTIONS.map((option) => (
+              <option key={option.value} value={option.value}>
+                {option.label}
+              </option>
+            ))}
           </select>
         </div>
 
