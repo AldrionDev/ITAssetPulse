@@ -14,6 +14,30 @@ export const AssetTable = ({ assets, onDelete, onUpdate }: AssetTableProps) => {
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [selectedQR, setSelectedQR] = useState<Asset | null>(null);
 
+  const handleStatusChange = (newStatus: string) => {
+    if (!editingAsset) return;
+
+    setEditingAsset({
+      ...editingAsset,
+      status: newStatus,
+      assignedTo: newStatus === "assigned" ? editingAsset.assignedTo : "",
+    });
+  };
+
+  const handleSave = async () => {
+    if (!editingAsset) return;
+
+    await onUpdate(editingAsset._id, {
+      status: editingAsset.status,
+      assignedTo:
+        editingAsset.status === "assigned" ? editingAsset.assignedTo : "",
+      department: editingAsset.department,
+      assignedAt: editingAsset.assignedAt,
+    });
+
+    setEditingAsset(null);
+  };
+
   return (
     <div className="bg-white rounded-2xl shadow-sm border border-gray-200 overflow-hidden">
       <div className="overflow-x-auto">
@@ -81,16 +105,20 @@ export const AssetTable = ({ assets, onDelete, onUpdate }: AssetTableProps) => {
                   </td>
 
                   <td className="px-6 py-4 text-sm text-gray-600">
-                    <div className="font-semibold text-gray-800">
-                      {asset.assignedTo || "-"}
+                    {asset.status === "assigned" && (
+                      <div className="font-semibold text-gray-800">
+                        {asset.assignedTo || "-"}
+                      </div>
+                    )}
+
+                    <div className="text-xs text-gray-500">
+                      {asset.department || "-"}
                     </div>
-                    <div className="text-xs text-gray-400">
-                      {asset.department || ""}
-                    </div>
+
                     <div className="text-xs text-gray-400">
                       {asset.assignedAt
                         ? new Date(asset.assignedAt).toLocaleDateString()
-                        : ""}
+                        : "-"}
                     </div>
                   </td>
 
@@ -144,11 +172,12 @@ export const AssetTable = ({ assets, onDelete, onUpdate }: AssetTableProps) => {
           <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md">
             <h3 className="text-2xl font-bold mb-4">Update Asset</h3>
 
+            <label className="block text-sm font-bold text-gray-700 mb-2">
+              Status
+            </label>
             <select
               value={editingAsset.status}
-              onChange={(e) =>
-                setEditingAsset({ ...editingAsset, status: e.target.value })
-              }
+              onChange={(e) => handleStatusChange(e.target.value)}
               className="w-full border rounded-xl p-3 mb-4"
             >
               <option value="available">Available</option>
@@ -156,20 +185,29 @@ export const AssetTable = ({ assets, onDelete, onUpdate }: AssetTableProps) => {
               <option value="maintenance">Maintenance</option>
             </select>
 
-            <input
-              type="text"
-              value={editingAsset.assignedTo || ""}
-              onChange={(e) =>
-                setEditingAsset({
-                  ...editingAsset,
-                  assignedTo: e.target.value,
-                  status: e.target.value ? "assigned" : editingAsset.status,
-                })
-              }
-              className="w-full border rounded-xl p-3 mb-4"
-              placeholder="Assigned to"
-            />
+            {editingAsset.status === "assigned" && (
+              <>
+                <label className="block text-sm font-bold text-gray-700 mb-2">
+                  Assigned To
+                </label>
+                <input
+                  type="text"
+                  value={editingAsset.assignedTo || ""}
+                  onChange={(e) =>
+                    setEditingAsset({
+                      ...editingAsset,
+                      assignedTo: e.target.value,
+                    })
+                  }
+                  className="w-full border rounded-xl p-3 mb-4"
+                  placeholder="e.g. Kovács Anna"
+                />
+              </>
+            )}
 
+            <label className="block text-sm font-bold text-gray-700 mb-2">
+              Department
+            </label>
             <input
               type="text"
               value={editingAsset.department || ""}
@@ -180,9 +218,12 @@ export const AssetTable = ({ assets, onDelete, onUpdate }: AssetTableProps) => {
                 })
               }
               className="w-full border rounded-xl p-3 mb-4"
-              placeholder="Department"
+              placeholder="e.g. IT Department"
             />
 
+            <label className="block text-sm font-bold text-gray-700 mb-2">
+              Date
+            </label>
             <input
               type="date"
               value={editingAsset.assignedAt?.slice(0, 10) || ""}
@@ -204,18 +245,7 @@ export const AssetTable = ({ assets, onDelete, onUpdate }: AssetTableProps) => {
               </button>
 
               <button
-                onClick={() => {
-                  onUpdate(editingAsset._id, {
-                    status: editingAsset.assignedTo
-                      ? "assigned"
-                      : editingAsset.status,
-                    assignedTo: editingAsset.assignedTo,
-                    department: editingAsset.department,
-                    assignedAt: editingAsset.assignedAt,
-                  });
-
-                  setEditingAsset(null);
-                }}
+                onClick={handleSave}
                 className="bg-indigo-600 text-white px-6 py-2 rounded-xl font-bold"
               >
                 Save
