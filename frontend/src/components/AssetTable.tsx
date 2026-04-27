@@ -2,6 +2,7 @@ import { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { QRModal } from "./QRModal";
 import type { Asset } from "../types/asset.types";
+import { getAssetStatusLabel, getAssetStatusStyle } from "../utils/assetStatus";
 
 interface AssetTableProps {
   assets: Asset[];
@@ -65,21 +66,19 @@ export const AssetTable = ({ assets, onDelete, onUpdate }: AssetTableProps) => {
                     {asset.category}
                   </td>
                   <td className="px-6 py-4 text-sm text-gray-600">
-                    {asset.status === "Available"
+                    {asset.status === "available"
                       ? "IT Stock-Budapest"
-                      : asset.status === "Under Repair"
+                      : asset.status === "maintenance"
                         ? "IT Department-Global"
                         : asset.location || "-"}
                   </td>
                   <td className="px-6 py-4">
                     <span
-                      className={`px-3 py-1 rounded-full text-xs font-bold border ${
-                        asset.status === "Available"
-                          ? "bg-green-50 text-green-700 border-green-100"
-                          : "bg-blue-50 text-blue-700 border-blue-100"
-                      }`}
+                      className={`px-3 py-1 rounded-full text-xs font-bold border ${getAssetStatusStyle(
+                        asset.status,
+                      )}`}
                     >
-                      {asset.status}
+                      {getAssetStatusLabel(asset.status)}
                     </span>
                   </td>
                   <td className="px-6 py-4 text-right flex justify-end gap-3">
@@ -127,9 +126,9 @@ export const AssetTable = ({ assets, onDelete, onUpdate }: AssetTableProps) => {
               }
               className="w-full border rounded-xl p-3 mb-6"
             >
-              <option value="Available">Available</option>
-              <option value="In Use">In Use</option>
-              <option value="Under Repair">Under Repair</option>
+              <option value="available">Available</option>
+              <option value="assigned">Assigned</option>
+              <option value="maintenance">Maintenance</option>
             </select>
             <div className="flex justify-end gap-4">
               <button

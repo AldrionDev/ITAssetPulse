@@ -10,13 +10,15 @@ export const AssetForm = ({ onAdd, onCancel }: AssetFormProps) => {
   const [name, setName] = useState("");
   const [serialNumber, setSerialNumber] = useState("");
   const [category, setCategory] = useState("Laptop");
-  const [status, setStatus] = useState("Available");
+  const [status, setStatus] = useState("available");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     await onAdd({ name, serialNumber, category, status });
     setName("");
     setSerialNumber("");
+    setCategory("Laptop");
+    setStatus("available");
   };
 
   return (
@@ -24,6 +26,7 @@ export const AssetForm = ({ onAdd, onCancel }: AssetFormProps) => {
       <h2 className="text-xl font-bold text-gray-800 mb-6 border-b pb-2">
         Register New Asset
       </h2>
+
       <form
         onSubmit={handleSubmit}
         className="grid grid-cols-1 md:grid-cols-2 gap-6"
@@ -41,6 +44,7 @@ export const AssetForm = ({ onAdd, onCancel }: AssetFormProps) => {
             required
           />
         </div>
+
         <div>
           <label className="block text-sm font-bold text-gray-700 mb-2">
             Serial Number
@@ -54,6 +58,7 @@ export const AssetForm = ({ onAdd, onCancel }: AssetFormProps) => {
             required
           />
         </div>
+
         <div>
           <label className="block text-sm font-bold text-gray-700 mb-2">
             Category
@@ -71,6 +76,7 @@ export const AssetForm = ({ onAdd, onCancel }: AssetFormProps) => {
             <option value="Docking station">Docking station</option>
           </select>
         </div>
+
         <div>
           <label className="block text-sm font-bold text-gray-700 mb-2">
             Status
@@ -80,11 +86,12 @@ export const AssetForm = ({ onAdd, onCancel }: AssetFormProps) => {
             onChange={(e) => setStatus(e.target.value)}
             className="w-full border-gray-200 border rounded-xl p-3 bg-white outline-none"
           >
-            <option value="Available">Available</option>
-            <option value="In Use">In Use</option>
-            <option value="Under Repair">Under Repair</option>
+            <option value="available">Available</option>
+            <option value="assigned">Assigned</option>
+            <option value="maintenance">Maintenance</option>
           </select>
         </div>
+
         <div className="md:col-span-2 flex justify-end gap-3">
           <button
             type="button"
@@ -93,6 +100,7 @@ export const AssetForm = ({ onAdd, onCancel }: AssetFormProps) => {
           >
             Cancel
           </button>
+
           <button
             type="submit"
             className="bg-indigo-600 text-white px-10 py-3 rounded-xl font-bold hover:bg-indigo-700 transition shadow-lg shadow-indigo-100"
