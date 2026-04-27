@@ -11,6 +11,9 @@ const demoAssets = [
     serialNumber: 'DL-2024-001',
     location: 'Budapest Office',
     status: 'assigned',
+    assignedTo: 'Kovács Anna',
+    department: 'IT',
+    assignedAt: new Date('2026-01-10'),
   },
   {
     name: 'HP EliteBook 840 G8',
@@ -25,6 +28,9 @@ const demoAssets = [
     serialNumber: 'MON-2024-003',
     location: 'Prague Office',
     status: 'assigned',
+    assignedTo: 'Novák Jan',
+    department: 'Engineering',
+    assignedAt: new Date('2026-02-05'),
   },
   {
     name: 'LG UltraWide 34" 34WN80C',
@@ -39,6 +45,9 @@ const demoAssets = [
     serialNumber: 'MS-2024-005',
     location: 'Budapest Office',
     status: 'assigned',
+    assignedTo: 'Szabó Péter',
+    department: 'Finance',
+    assignedAt: new Date('2026-01-22'),
   },
   {
     name: 'Logitech MX Keys',
@@ -46,6 +55,9 @@ const demoAssets = [
     serialNumber: 'KB-2024-006',
     location: 'Budapest Office',
     status: 'assigned',
+    assignedTo: 'Tóth Gábor',
+    department: 'IT',
+    assignedAt: new Date('2026-03-01'),
   },
   {
     name: 'Dell 130W USB-C Power Adapter',
@@ -60,6 +72,9 @@ const demoAssets = [
     serialNumber: 'DS-2024-008',
     location: 'Budapest Office',
     status: 'assigned',
+    assignedTo: 'Kiss Dániel',
+    department: 'Operations',
+    assignedAt: new Date('2026-02-18'),
   },
   {
     name: 'Lenovo ThinkPad X1 Carbon Gen 9',
