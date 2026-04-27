@@ -1,26 +1,11 @@
 import type { Asset } from "../types/asset.types";
+import { getAssetStatusLabel, getAssetStatusStyle } from "../utils/assetStatus";
 
 type RecentlyAddedAssetsProps = {
   assets: Asset[];
 };
 
 const RecentlyAddedAssets = ({ assets }: RecentlyAddedAssetsProps) => {
-  const getStatusStyle = (status: string) => {
-    if (status === "available") {
-      return "bg-emerald-100 text-emerald-700";
-    }
-
-    if (status === "assigned") {
-      return "bg-amber-100 text-amber-700";
-    }
-
-    if (status === "maintenance") {
-      return "bg-rose-100 text-rose-700";
-    }
-
-    return "bg-gray-100 text-gray-600";
-  };
-
   return (
     <section className="bg-white rounded-2xl border border-gray-200 shadow-sm p-6">
       <div className="flex items-center justify-between mb-5">
@@ -49,11 +34,11 @@ const RecentlyAddedAssets = ({ assets }: RecentlyAddedAssetsProps) => {
               </div>
 
               <span
-                className={`px-3 py-1 rounded-full text-xs font-extrabold ${getStatusStyle(
+                className={`px-3 py-1 rounded-full text-xs font-extrabold ${getAssetStatusStyle(
                   asset.status,
                 )}`}
               >
-                {asset.status}
+                {getAssetStatusLabel(asset.status)}
               </span>
             </li>
           ))}
