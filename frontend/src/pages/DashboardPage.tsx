@@ -6,12 +6,25 @@ import { AssetForm } from "../components/AssetForm";
 import { AssetFilter } from "../components/AssetFilter";
 import { AssetTable } from "../components/AssetTable";
 import type { NewAsset } from "../types/asset.types";
+import { useDashboardStats } from "../hooks/useDashboardStats";
+import DashboardSummaryCards from "../components/DashboardSummaryCards";
+import RecentlyAddedAssets from "../components/RecentlyAddedAssets";
+import CategoryBreakdown from "../components/CategoryBreakdown";
 
 const DashboardPage = () => {
   const { logout } = useAuth();
   const { assets, loading, loadAssets, addAsset, removeAsset, editAsset } =
     useAssets();
   const [showForm, setShowForm] = useState(false);
+
+  const {
+    totalAssets,
+    availableCount,
+    assignedCount,
+    maintenanceCount,
+    categoryBreakdown,
+    recentlyAddedAssets,
+  } = useDashboardStats(assets);
 
   const {
     filters,
@@ -70,6 +83,18 @@ const DashboardPage = () => {
             onCancel={() => setShowForm(false)}
           />
         )}
+
+        <DashboardSummaryCards
+          totalAssets={totalAssets}
+          availableCount={availableCount}
+          assignedCount={assignedCount}
+          maintenanceCount={maintenanceCount}
+        />
+
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
+          <CategoryBreakdown categories={categoryBreakdown} />
+          <RecentlyAddedAssets assets={recentlyAddedAssets} />
+        </div>
 
         <AssetFilter
           filters={filters}

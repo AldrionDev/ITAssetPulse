@@ -5,6 +5,8 @@ export interface Asset {
   category: string;
   status: string;
   location?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface NewAsset {
@@ -12,4 +14,7 @@ export interface NewAsset {
   serialNumber: string;
   category: string;
   status: string;
+  location?: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
