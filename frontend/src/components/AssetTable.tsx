@@ -3,6 +3,8 @@ import { QRCodeSVG } from "qrcode.react";
 import { QRModal } from "./QRModal";
 import type { Asset } from "../types/asset.types";
 import { getAssetStatusLabel, getAssetStatusStyle } from "../utils/assetStatus";
+import { ASSET_STATUS_OPTIONS } from "../constants/assetStatus";
+
 
 interface AssetTableProps {
   assets: Asset[];
@@ -126,9 +128,11 @@ export const AssetTable = ({ assets, onDelete, onUpdate }: AssetTableProps) => {
               }
               className="w-full border rounded-xl p-3 mb-6"
             >
-              <option value="available">Available</option>
-              <option value="assigned">Assigned</option>
-              <option value="maintenance">Maintenance</option>
+              {ASSET_STATUS_OPTIONS.map((option) => (
+                <option key={option.value} value={option.value}>
+                  {option.label}
+                </option>
+              ))}
             </select>
             <div className="flex justify-end gap-4">
               <button
