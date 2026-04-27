@@ -1,6 +1,5 @@
 import { useState } from "react";
 import type { NewAsset } from "../types/asset.types";
-import { ASSET_STATUS_OPTIONS } from "../constants/assetStatus";
 
 interface AssetFormProps {
   onAdd: (asset: NewAsset) => Promise<void>;
@@ -11,15 +10,31 @@ export const AssetForm = ({ onAdd, onCancel }: AssetFormProps) => {
   const [name, setName] = useState("");
   const [serialNumber, setSerialNumber] = useState("");
   const [category, setCategory] = useState("Laptop");
-  const [status, setStatus] = useState(ASSET_STATUS_OPTIONS[0].value);
+  const [status, setStatus] = useState("available");
+  const [assignedTo, setAssignedTo] = useState("");
+  const [department, setDepartment] = useState("");
+  const [assignedAt, setAssignedAt] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    await onAdd({ name, serialNumber, category, status });
+
+    await onAdd({
+      name,
+      serialNumber,
+      category,
+      status: assignedTo ? "assigned" : status,
+      assignedTo,
+      department,
+      assignedAt,
+    });
+
     setName("");
     setSerialNumber("");
     setCategory("Laptop");
-    setStatus(ASSET_STATUS_OPTIONS[0].value);
+    setStatus("available");
+    setAssignedTo("");
+    setDepartment("");
+    setAssignedAt("");
   };
 
   return (
@@ -87,12 +102,53 @@ export const AssetForm = ({ onAdd, onCancel }: AssetFormProps) => {
             onChange={(e) => setStatus(e.target.value)}
             className="w-full border-gray-200 border rounded-xl p-3 bg-white outline-none"
           >
-            {ASSET_STATUS_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
+            <option value="available">Available</option>
+            <option value="assigned">Assigned</option>
+            <option value="maintenance">Maintenance</option>
           </select>
+        </div>
+
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-2">
+            Assigned To
+          </label>
+          <input
+            type="text"
+            value={assignedTo}
+            onChange={(e) => {
+              setAssignedTo(e.target.value);
+              if (e.target.value) {
+                setStatus("assigned");
+              }
+            }}
+            className="w-full border-gray-200 border rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none transition"
+            placeholder="e.g. Kovács Anna"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-2">
+            Department
+          </label>
+          <input
+            type="text"
+            value={department}
+            onChange={(e) => setDepartment(e.target.value)}
+            className="w-full border-gray-200 border rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none transition"
+            placeholder="e.g. IT"
+          />
+        </div>
+
+        <div>
+          <label className="block text-sm font-bold text-gray-700 mb-2">
+            Assigned At
+          </label>
+          <input
+            type="date"
+            value={assignedAt}
+            onChange={(e) => setAssignedAt(e.target.value)}
+            className="w-full border-gray-200 border rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none transition"
+          />
         </div>
 
         <div className="md:col-span-2 flex justify-end gap-3">

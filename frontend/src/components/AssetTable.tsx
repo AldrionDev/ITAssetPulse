@@ -3,8 +3,6 @@ import { QRCodeSVG } from "qrcode.react";
 import { QRModal } from "./QRModal";
 import type { Asset } from "../types/asset.types";
 import { getAssetStatusLabel, getAssetStatusStyle } from "../utils/assetStatus";
-import { ASSET_STATUS_OPTIONS } from "../constants/assetStatus";
-
 
 interface AssetTableProps {
   assets: Asset[];
@@ -32,6 +30,9 @@ export const AssetTable = ({ assets, onDelete, onUpdate }: AssetTableProps) => {
                 Location
               </th>
               <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
+                Assigned
+              </th>
+              <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider">
                 Status
               </th>
               <th className="px-6 py-4 text-xs font-bold text-gray-500 uppercase tracking-wider text-right">
@@ -39,6 +40,7 @@ export const AssetTable = ({ assets, onDelete, onUpdate }: AssetTableProps) => {
               </th>
             </tr>
           </thead>
+
           <tbody className="divide-y divide-gray-100">
             {assets.length > 0 ? (
               assets.map((asset) => (
@@ -54,6 +56,7 @@ export const AssetTable = ({ assets, onDelete, onUpdate }: AssetTableProps) => {
                       >
                         <QRCodeSVG value={asset.serialNumber} size={28} />
                       </div>
+
                       <div>
                         <div className="font-semibold text-gray-900">
                           {asset.name}
@@ -64,9 +67,11 @@ export const AssetTable = ({ assets, onDelete, onUpdate }: AssetTableProps) => {
                       </div>
                     </div>
                   </td>
+
                   <td className="px-6 py-4 text-sm text-gray-600">
                     {asset.category}
                   </td>
+
                   <td className="px-6 py-4 text-sm text-gray-600">
                     {asset.status === "available"
                       ? "IT Stock-Budapest"
@@ -74,6 +79,21 @@ export const AssetTable = ({ assets, onDelete, onUpdate }: AssetTableProps) => {
                         ? "IT Department-Global"
                         : asset.location || "-"}
                   </td>
+
+                  <td className="px-6 py-4 text-sm text-gray-600">
+                    <div className="font-semibold text-gray-800">
+                      {asset.assignedTo || "-"}
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      {asset.department || ""}
+                    </div>
+                    <div className="text-xs text-gray-400">
+                      {asset.assignedAt
+                        ? new Date(asset.assignedAt).toLocaleDateString()
+                        : ""}
+                    </div>
+                  </td>
+
                   <td className="px-6 py-4">
                     <span
                       className={`px-3 py-1 rounded-full text-xs font-bold border ${getAssetStatusStyle(
@@ -83,6 +103,7 @@ export const AssetTable = ({ assets, onDelete, onUpdate }: AssetTableProps) => {
                       {getAssetStatusLabel(asset.status)}
                     </span>
                   </td>
+
                   <td className="px-6 py-4 text-right flex justify-end gap-3">
                     <button
                       onClick={() => setEditingAsset(asset)}
@@ -90,6 +111,7 @@ export const AssetTable = ({ assets, onDelete, onUpdate }: AssetTableProps) => {
                     >
                       Edit
                     </button>
+
                     <button
                       onClick={() => onDelete(asset._id)}
                       className="text-red-500 font-bold text-sm"
@@ -102,7 +124,7 @@ export const AssetTable = ({ assets, onDelete, onUpdate }: AssetTableProps) => {
             ) : (
               <tr>
                 <td
-                  colSpan={5}
+                  colSpan={6}
                   className="px-6 py-12 text-center text-gray-400"
                 >
                   No assets found.
@@ -120,20 +142,59 @@ export const AssetTable = ({ assets, onDelete, onUpdate }: AssetTableProps) => {
       {editingAsset && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
           <div className="bg-white p-8 rounded-2xl shadow-2xl w-full max-w-md">
-            <h3 className="text-2xl font-bold mb-4">Update Status</h3>
+            <h3 className="text-2xl font-bold mb-4">Update Asset</h3>
+
             <select
               value={editingAsset.status}
               onChange={(e) =>
                 setEditingAsset({ ...editingAsset, status: e.target.value })
               }
-              className="w-full border rounded-xl p-3 mb-6"
+              className="w-full border rounded-xl p-3 mb-4"
             >
-              {ASSET_STATUS_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
+              <option value="available">Available</option>
+              <option value="assigned">Assigned</option>
+              <option value="maintenance">Maintenance</option>
             </select>
+
+            <input
+              type="text"
+              value={editingAsset.assignedTo || ""}
+              onChange={(e) =>
+                setEditingAsset({
+                  ...editingAsset,
+                  assignedTo: e.target.value,
+                  status: e.target.value ? "assigned" : editingAsset.status,
+                })
+              }
+              className="w-full border rounded-xl p-3 mb-4"
+              placeholder="Assigned to"
+            />
+
+            <input
+              type="text"
+              value={editingAsset.department || ""}
+              onChange={(e) =>
+                setEditingAsset({
+                  ...editingAsset,
+                  department: e.target.value,
+                })
+              }
+              className="w-full border rounded-xl p-3 mb-4"
+              placeholder="Department"
+            />
+
+            <input
+              type="date"
+              value={editingAsset.assignedAt?.slice(0, 10) || ""}
+              onChange={(e) =>
+                setEditingAsset({
+                  ...editingAsset,
+                  assignedAt: e.target.value,
+                })
+              }
+              className="w-full border rounded-xl p-3 mb-6"
+            />
+
             <div className="flex justify-end gap-4">
               <button
                 onClick={() => setEditingAsset(null)}
@@ -141,9 +202,18 @@ export const AssetTable = ({ assets, onDelete, onUpdate }: AssetTableProps) => {
               >
                 Cancel
               </button>
+
               <button
                 onClick={() => {
-                  onUpdate(editingAsset._id, { status: editingAsset.status });
+                  onUpdate(editingAsset._id, {
+                    status: editingAsset.assignedTo
+                      ? "assigned"
+                      : editingAsset.status,
+                    assignedTo: editingAsset.assignedTo,
+                    department: editingAsset.department,
+                    assignedAt: editingAsset.assignedAt,
+                  });
+
                   setEditingAsset(null);
                 }}
                 className="bg-indigo-600 text-white px-6 py-2 rounded-xl font-bold"

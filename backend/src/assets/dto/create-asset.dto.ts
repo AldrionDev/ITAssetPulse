@@ -1,4 +1,4 @@
-import { IsString, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsString, IsNotEmpty, IsOptional, IsDateString } from 'class-validator';
 
 export class CreateAssetDto {
   @IsString()
@@ -20,4 +20,16 @@ export class CreateAssetDto {
   @IsString()
   @IsOptional()
   location?: string;
+
+  @IsString()
+  @IsOptional()
+  assignedTo?: string;
+
+  @IsString()
+  @IsOptional()
+  department?: string;
+
+  @IsDateString()
+  @IsOptional()
+  assignedAt?: Date;
 }

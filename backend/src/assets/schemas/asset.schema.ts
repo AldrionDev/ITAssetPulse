@@ -14,11 +14,20 @@ export class Asset {
   @Prop({ required: true })
   category!: string;
 
-  @Prop({ default: 'Available' })
+  @Prop({ default: 'available' })
   status!: string;
 
   @Prop()
-  location!: string;
+  location?: string;
+
+  @Prop()
+  assignedTo?: string;
+
+  @Prop()
+  department?: string;
+
+  @Prop()
+  assignedAt?: Date;
 }
 
 export const AssetSchema = SchemaFactory.createForClass(Asset);
