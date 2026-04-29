@@ -24,3 +24,11 @@ export interface NewAsset {
   createdAt?: string;
   updatedAt?: string;
 }
+
+export interface AssetHistory {
+  assetId: string;
+  action: string;
+  oldValue?: string;
+  newValue?: string;
+  changedAt: string;
+}

@@ -1,5 +1,5 @@
 import { apiFetch } from "./fetchInstance";
-import type { Asset, NewAsset } from "../types/asset.types";
+import type { Asset, NewAsset, AssetHistory } from "../types/asset.types";
 
 export const fetchAllAssets = (): Promise<Asset[]> =>
   apiFetch<Asset[]>("/assets");
@@ -20,3 +20,6 @@ export const updateAsset = (id: string, data: Partial<Asset>): Promise<Asset> =>
     method: "PATCH",
     body: data,
   });
+
+export const getAssetHistory = (assetId: string): Promise<AssetHistory[]> =>
+  apiFetch<AssetHistory[]>(`/asset-history/${assetId}`);
