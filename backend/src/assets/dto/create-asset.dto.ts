@@ -1,4 +1,9 @@
-import { IsString, IsNotEmpty, IsOptional, IsDateString } from 'class-validator';
+import {
+  IsString,
+  IsNotEmpty,
+  IsOptional,
+  IsDateString,
+} from 'class-validator';
 
 export class CreateAssetDto {
   @IsString()
@@ -23,7 +28,7 @@ export class CreateAssetDto {
 
   @IsString()
   @IsOptional()
-  assignedTo?: string;
+  assignedEmployeeId?: string;
 
   @IsString()
   @IsOptional()

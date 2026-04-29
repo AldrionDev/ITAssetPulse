@@ -1,3 +1,4 @@
+import type { Employee } from "../types/employee.types";
 import { useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { QRModal } from "./QRModal";
@@ -6,11 +7,17 @@ import { getAssetStatusLabel, getAssetStatusStyle } from "../utils/assetStatus";
 
 interface AssetTableProps {
   assets: Asset[];
+  employees: Employee[];
   onDelete: (id: string) => Promise<void>;
   onUpdate: (id: string, data: Partial<Asset>) => Promise<void>;
 }
 
-export const AssetTable = ({ assets, onDelete, onUpdate }: AssetTableProps) => {
+export const AssetTable = ({
+  assets,
+  employees,
+  onDelete,
+  onUpdate,
+}: AssetTableProps) => {
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [selectedQR, setSelectedQR] = useState<Asset | null>(null);
 
@@ -20,7 +27,8 @@ export const AssetTable = ({ assets, onDelete, onUpdate }: AssetTableProps) => {
     setEditingAsset({
       ...editingAsset,
       status: newStatus,
-      assignedTo: newStatus === "assigned" ? editingAsset.assignedTo : "",
+      assignedEmployeeId:
+        newStatus === "assigned" ? editingAsset.assignedEmployeeId : "",
     });
   };
 
@@ -29,8 +37,10 @@ export const AssetTable = ({ assets, onDelete, onUpdate }: AssetTableProps) => {
 
     await onUpdate(editingAsset._id, {
       status: editingAsset.status,
-      assignedTo:
-        editingAsset.status === "assigned" ? editingAsset.assignedTo : "",
+      assignedEmployeeId:
+        editingAsset.status === "assigned"
+          ? editingAsset.assignedEmployeeId
+          : "",
       department: editingAsset.department,
       assignedAt: editingAsset.assignedAt,
     });
@@ -107,7 +117,9 @@ export const AssetTable = ({ assets, onDelete, onUpdate }: AssetTableProps) => {
                   <td className="px-6 py-4 text-sm text-gray-600">
                     {asset.status === "assigned" && (
                       <div className="font-semibold text-gray-800">
-                        {asset.assignedTo || "-"}
+                        {employees.find(
+                          (e) => e._id === asset.assignedEmployeeId,
+                        )?.name || "-"}
                       </div>
                     )}
 
@@ -188,20 +200,27 @@ export const AssetTable = ({ assets, onDelete, onUpdate }: AssetTableProps) => {
             {editingAsset.status === "assigned" && (
               <>
                 <label className="block text-sm font-bold text-gray-700 mb-2">
-                  Assigned To
+                  Assigned Employee
                 </label>
-                <input
-                  type="text"
-                  value={editingAsset.assignedTo || ""}
+
+                <select
+                  value={editingAsset.assignedEmployeeId || ""}
                   onChange={(e) =>
                     setEditingAsset({
                       ...editingAsset,
-                      assignedTo: e.target.value,
+                      assignedEmployeeId: e.target.value,
                     })
                   }
-                  className="w-full border rounded-xl p-3 mb-4"
-                  placeholder="e.g. Kovács Anna"
-                />
+                  className="w-full border rounded-xl p-3 mb-4 bg-white"
+                >
+                  <option value="">Select employee</option>
+
+                  {employees.map((employee) => (
+                    <option key={employee._id} value={employee._id}>
+                      {employee.name} — {employee.department}
+                    </option>
+                  ))}
+                </select>
               </>
             )}
 

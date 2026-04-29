@@ -3,6 +3,8 @@ import { useAuth } from "./context/AuthContext";
 import { AuthProvider } from "./context/AuthProvider";
 import LoginPageRoute from "./pages/LoginPageRoute";
 import DashboardPage from "./pages/DashboardPage";
+import { EmployeesPage } from "./pages/EmployeesPage";
+import { NavBar } from "./components/NavBar";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth();
@@ -19,7 +21,17 @@ function App() {
             path="/dashboard"
             element={
               <ProtectedRoute>
+                <NavBar />
                 <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/employees"
+            element={
+              <ProtectedRoute>
+                <NavBar />
+                <EmployeesPage />
               </ProtectedRoute>
             }
           />
