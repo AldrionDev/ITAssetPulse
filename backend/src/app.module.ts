@@ -4,6 +4,7 @@ import { ConfigModule } from '@nestjs/config';
 import { AssetsModule } from './assets/assets.module';
 import { AuthModule } from './auth/auth.module';
 import { EmployeesModule } from './employees/employees.module';
+import { AssetHistoryModule } from './asset-history/asset-history.module';
 
 @Module({
   imports: [
@@ -16,6 +17,7 @@ import { EmployeesModule } from './employees/employees.module';
     AssetsModule,
     AuthModule,
     EmployeesModule,
+    AssetHistoryModule,
   ],
 })
 export class AppModule {}
