@@ -31,9 +31,9 @@ To start the ITAssetPulse application, follow these steps:
    docker-compose exec backend npm run seed
    ```
 ## Roadmap: 
- - [] Add search bar
- - [] Dashboard cards
+ - [✅] Add search bar
+ - [✅] Dashboard cards
+ - [] Asset history / audit log - **In progress**
  - [] Asset detail page
- - [] Asset history / audit log
  - [] Role-based auth
  - [] QR scanner

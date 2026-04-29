@@ -5,7 +5,7 @@ export interface Asset {
   category: string;
   status: string;
   location?: string;
-  assignedTo?: string;
+  assignedEmployeeId?: string;
   department?: string;
   assignedAt?: string;
   createdAt?: string;
@@ -18,7 +18,7 @@ export interface NewAsset {
   category: string;
   status: string;
   location?: string;
-  assignedTo?: string;
+  assignedEmployeeId?: string;
   department?: string;
   assignedAt?: string;
   createdAt?: string;

@@ -1,5 +1,5 @@
+import type { Employee } from "../types/employee.types";
 import { useEffect, useState } from "react";
-import { useAuth } from "../context/AuthContext";
 import { useAssets } from "../hooks/useAssets";
 import { useAssetFilter } from "../hooks/useAssetFilter";
 import { AssetForm } from "../components/AssetForm";
@@ -12,10 +12,11 @@ import RecentlyAddedAssets from "../components/RecentlyAddedAssets";
 import CategoryBreakdown from "../components/CategoryBreakdown";
 
 const DashboardPage = () => {
-  const { logout } = useAuth();
   const { assets, loading, loadAssets, addAsset, removeAsset, editAsset } =
     useAssets();
+
   const [showForm, setShowForm] = useState(false);
+  const [employees, setEmployees] = useState<Employee[]>([]);
 
   const {
     totalAssets,
@@ -40,6 +41,17 @@ const DashboardPage = () => {
 
   useEffect(() => {
     loadAssets();
+    loadEmployees();
+
+    async function loadEmployees() {
+      try {
+        const res = await fetch("http://localhost:3000/employees");
+        const data = await res.json();
+        setEmployees(data);
+      } catch (err) {
+        console.error("Failed to fetch employees", err);
+      }
+    }
   }, [loadAssets]);
 
   const handleAddAsset = async (newAsset: NewAsset) => {
@@ -59,6 +71,7 @@ const DashboardPage = () => {
               IT Department Asset Management
             </p>
           </div>
+
           <div className="flex gap-4">
             {!showForm && (
               <button
@@ -68,12 +81,6 @@ const DashboardPage = () => {
                 + Add New Asset
               </button>
             )}
-            <button
-              onClick={logout}
-              className="px-6 py-3 bg-white text-gray-500 font-bold rounded-xl border border-gray-200 hover:bg-gray-50 transition active:scale-95"
-            >
-              Logout
-            </button>
           </div>
         </header>
 
@@ -81,6 +88,7 @@ const DashboardPage = () => {
           <AssetForm
             onAdd={handleAddAsset}
             onCancel={() => setShowForm(false)}
+            employees={employees}
           />
         )}
 
@@ -114,6 +122,7 @@ const DashboardPage = () => {
         ) : (
           <AssetTable
             assets={filteredAssets}
+            employees={employees}
             onDelete={removeAsset}
             onUpdate={editAsset}
           />

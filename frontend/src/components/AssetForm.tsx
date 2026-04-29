@@ -1,17 +1,19 @@
 import { useState } from "react";
 import type { NewAsset } from "../types/asset.types";
+import type { Employee } from "../types/employee.types";
 
 interface AssetFormProps {
   onAdd: (asset: NewAsset) => Promise<void>;
   onCancel: () => void;
+  employees: Employee[];
 }
 
-export const AssetForm = ({ onAdd, onCancel }: AssetFormProps) => {
+export const AssetForm = ({ onAdd, onCancel, employees }: AssetFormProps) => {
   const [name, setName] = useState("");
   const [serialNumber, setSerialNumber] = useState("");
   const [category, setCategory] = useState("Laptop");
   const [status, setStatus] = useState("available");
-  const [assignedTo, setAssignedTo] = useState("");
+  const [assignedEmployeeId, setAssignedEmployeeId] = useState("");
   const [department, setDepartment] = useState("");
   const [assignedAt, setAssignedAt] = useState("");
 
@@ -22,8 +24,8 @@ export const AssetForm = ({ onAdd, onCancel }: AssetFormProps) => {
       name,
       serialNumber,
       category,
-      status: assignedTo ? "assigned" : status,
-      assignedTo,
+      status: assignedEmployeeId ? "assigned" : status,
+      assignedEmployeeId,
       department,
       assignedAt,
     });
@@ -32,7 +34,7 @@ export const AssetForm = ({ onAdd, onCancel }: AssetFormProps) => {
     setSerialNumber("");
     setCategory("Laptop");
     setStatus("available");
-    setAssignedTo("");
+    setAssignedEmployeeId("");
     setDepartment("");
     setAssignedAt("");
   };
@@ -99,7 +101,13 @@ export const AssetForm = ({ onAdd, onCancel }: AssetFormProps) => {
           </label>
           <select
             value={status}
-            onChange={(e) => setStatus(e.target.value)}
+            onChange={(e) => {
+              setStatus(e.target.value);
+
+              if (e.target.value !== "assigned") {
+                setAssignedEmployeeId("");
+              }
+            }}
             className="w-full border-gray-200 border rounded-xl p-3 bg-white outline-none"
           >
             <option value="available">Available</option>
@@ -108,23 +116,31 @@ export const AssetForm = ({ onAdd, onCancel }: AssetFormProps) => {
           </select>
         </div>
 
-        <div>
-          <label className="block text-sm font-bold text-gray-700 mb-2">
-            Assigned To
-          </label>
-          <input
-            type="text"
-            value={assignedTo}
-            onChange={(e) => {
-              setAssignedTo(e.target.value);
-              if (e.target.value) {
-                setStatus("assigned");
-              }
-            }}
-            className="w-full border-gray-200 border rounded-xl p-3 focus:ring-2 focus:ring-indigo-500 outline-none transition"
-            placeholder="e.g. Kovács Anna"
-          />
-        </div>
+        {status === "assigned" && (
+          <div>
+            <label className="block text-sm font-bold text-gray-700 mb-2">
+              Assigned Employee
+            </label>
+            <select
+              value={assignedEmployeeId}
+              onChange={(e) => {
+                setAssignedEmployeeId(e.target.value);
+                if (e.target.value) {
+                  setStatus("assigned");
+                }
+              }}
+              className="w-full border-gray-200 border rounded-xl p-3 bg-white outline-none"
+            >
+              <option value="">Select employee</option>
+
+              {employees.map((employee) => (
+                <option key={employee._id} value={employee._id}>
+                  {employee.name} — {employee.department}
+                </option>
+              ))}
+            </select>
+          </div>
+        )}
 
         <div>
           <label className="block text-sm font-bold text-gray-700 mb-2">

@@ -21,7 +21,7 @@ export class Asset {
   location?: string;
 
   @Prop()
-  assignedTo?: string;
+  assignedEmployeeId?: string;
 
   @Prop()
   department?: string;
