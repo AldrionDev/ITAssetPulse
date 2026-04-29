@@ -283,10 +283,14 @@ export const AssetTable = ({
         </div>
       )}
 
-      <HistoryModal
-        assetId={historyAssetId}
-        onClose={() => setHistoryAssetId(null)}
-      />
+      {historyAssetId && (
+        <HistoryModal
+          key={historyAssetId}
+          assetId={historyAssetId}
+          employees={employees}
+          onClose={() => setHistoryAssetId(null)}
+        />
+      )}
     </div>
   );
 };
