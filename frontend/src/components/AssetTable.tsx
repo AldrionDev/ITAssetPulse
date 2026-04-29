@@ -4,6 +4,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { QRModal } from "./QRModal";
 import type { Asset } from "../types/asset.types";
 import { getAssetStatusLabel, getAssetStatusStyle } from "../utils/assetStatus";
+import { HistoryModal } from "./HistoryModal";
 
 interface AssetTableProps {
   assets: Asset[];
@@ -20,6 +21,7 @@ export const AssetTable = ({
 }: AssetTableProps) => {
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [selectedQR, setSelectedQR] = useState<Asset | null>(null);
+  const [historyAssetId, setHistoryAssetId] = useState<string | null>(null);
 
   const handleStatusChange = (newStatus: string) => {
     if (!editingAsset) return;
@@ -145,6 +147,13 @@ export const AssetTable = ({
                   </td>
 
                   <td className="px-6 py-4 text-right flex justify-end gap-3">
+                    <button
+                      onClick={() => setHistoryAssetId(asset._id)}
+                      className="text-gray-600 font-bold text-sm"
+                    >
+                      History
+                    </button>
+
                     <button
                       onClick={() => setEditingAsset(asset)}
                       className="text-indigo-600 font-bold text-sm"
@@ -273,6 +282,11 @@ export const AssetTable = ({
           </div>
         </div>
       )}
+
+      <HistoryModal
+        assetId={historyAssetId}
+        onClose={() => setHistoryAssetId(null)}
+      />
     </div>
   );
 };
