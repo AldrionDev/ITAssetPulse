@@ -38,7 +38,7 @@ To start the ITAssetPulse application, follow these steps:
 
 - [✅] Add search bar
 - [✅] Dashboard cards
-- [] Asset history / audit log - **In progress**
-- [] Asset detail page
+- [✅] Asset history / audit log
+- [] Asset detail page - **In progress**
 - [] Role-based auth
 - [] QR scanner
