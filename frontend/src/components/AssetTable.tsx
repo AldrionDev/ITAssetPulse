@@ -5,6 +5,7 @@ import { QRModal } from "./QRModal";
 import type { Asset } from "../types/asset.types";
 import { getAssetStatusLabel, getAssetStatusStyle } from "../utils/assetStatus";
 import { HistoryModal } from "./HistoryModal";
+import { useNavigate } from "react-router-dom";
 
 interface AssetTableProps {
   assets: Asset[];
@@ -19,6 +20,8 @@ export const AssetTable = ({
   onDelete,
   onUpdate,
 }: AssetTableProps) => {
+  const navigate = useNavigate();
+
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [selectedQR, setSelectedQR] = useState<Asset | null>(null);
   const [historyAssetId, setHistoryAssetId] = useState<string | null>(null);
@@ -147,6 +150,13 @@ export const AssetTable = ({
                   </td>
 
                   <td className="px-6 py-4 text-right flex justify-end gap-3">
+                    <button
+                      onClick={() => navigate(`/assets/${asset._id}`)}
+                      className="text-blue-600 font-bold text-sm"
+                    >
+                      Details
+                    </button>
+
                     <button
                       onClick={() => setHistoryAssetId(asset._id)}
                       className="text-gray-600 font-bold text-sm"
