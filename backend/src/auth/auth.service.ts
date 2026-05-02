@@ -18,7 +18,11 @@ export class AuthService {
     }
 
     return {
-      access_token: this.jwtService.sign({ username, sub: 'admin' }),
+      access_token: this.jwtService.sign({
+        username,
+        sub: 'admin',
+        role: 'admin',
+      }),
     };
   }
 }
