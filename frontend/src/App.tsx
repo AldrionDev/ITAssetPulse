@@ -5,6 +5,7 @@ import LoginPageRoute from "./pages/LoginPageRoute";
 import DashboardPage from "./pages/DashboardPage";
 import { EmployeesPage } from "./pages/EmployeesPage";
 import { NavBar } from "./components/NavBar";
+import { AssetDetailPage } from "./pages/AssetDetailPage";
 
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { isAuthenticated } = useAuth();
@@ -35,6 +36,15 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/assets/:id"
+            element={
+              <ProtectedRoute>
+                <NavBar />
+                <AssetDetailPage />
+              </ProtectedRoute>
+            }
+          />  
           <Route path="*" element={<Navigate to="/login" replace />} />
         </Routes>
       </BrowserRouter>
