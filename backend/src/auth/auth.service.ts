@@ -10,18 +10,26 @@ export class AuthService {
   ) {}
 
   async login(username: string, password: string) {
-    const adminUser = this.configService.get<string>('ADMIN_USERNAME');
-    const adminPass = this.configService.get<string>('ADMIN_PASSWORD');
+    // For demo purposes, demoUsers is hardcoded. In production, use a database.
+    const demoUsers = [
+      { username: 'admin', password: 'secret123', role: 'admin' },
+      { username: 'manager', password: 'project123', role: 'manager' },
+      { username: 'viewer', password: 'viewer1234', role: 'viewer' },
+    ];
 
-    if (username !== adminUser || password !== adminPass) {
+    const user = demoUsers.find(
+      (u) => u.username === username && u.password === password,
+    );
+
+    if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
 
     return {
       access_token: this.jwtService.sign({
-        username,
-        sub: 'admin',
-        role: 'admin',
+        username: user.username,
+        sub: user.username,
+        role: user.role,
       }),
     };
   }
