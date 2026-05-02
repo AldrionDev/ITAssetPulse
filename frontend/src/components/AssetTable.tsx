@@ -6,6 +6,7 @@ import type { Asset } from "../types/asset.types";
 import { getAssetStatusLabel, getAssetStatusStyle } from "../utils/assetStatus";
 import { HistoryModal } from "./HistoryModal";
 import { useNavigate } from "react-router-dom";
+import { useAuth } from "../context/AuthContext";
 
 interface AssetTableProps {
   assets: Asset[];
@@ -25,6 +26,12 @@ export const AssetTable = ({
   const [editingAsset, setEditingAsset] = useState<Asset | null>(null);
   const [selectedQR, setSelectedQR] = useState<Asset | null>(null);
   const [historyAssetId, setHistoryAssetId] = useState<string | null>(null);
+
+  const { user } = useAuth();
+  const role = user?.role;
+
+  const canEdit = role === "admin" || role === "manager";
+  const canDelete = role === "admin";
 
   const handleStatusChange = (newStatus: string) => {
     if (!editingAsset) return;
@@ -164,19 +171,23 @@ export const AssetTable = ({
                       History
                     </button>
 
-                    <button
-                      onClick={() => setEditingAsset(asset)}
-                      className="text-indigo-600 font-bold text-sm"
-                    >
-                      Edit
-                    </button>
+                    {canEdit && (
+                      <button
+                        onClick={() => setEditingAsset(asset)}
+                        className="text-green-600 font-bold text-sm"
+                      >
+                        Edit
+                      </button>
+                    )}
 
-                    <button
-                      onClick={() => onDelete(asset._id)}
-                      className="text-red-500 font-bold text-sm"
-                    >
-                      Delete
-                    </button>
+                    {canDelete && (
+                      <button
+                        onClick={() => onDelete(asset._id)}
+                        className="text-red-500 font-bold text-sm"
+                      >
+                        Delete
+                      </button>
+                    )}
                   </td>
                 </tr>
               ))
