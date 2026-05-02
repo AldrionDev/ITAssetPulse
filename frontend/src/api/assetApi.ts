@@ -23,3 +23,6 @@ export const updateAsset = (id: string, data: Partial<Asset>): Promise<Asset> =>
 
 export const getAssetHistory = (assetId: string): Promise<AssetHistory[]> =>
   apiFetch<AssetHistory[]>(`/asset-history/${assetId}`);
+
+export const getAssetById = (id: string): Promise<Asset> =>
+  apiFetch<Asset>(`/assets/${id}`);
