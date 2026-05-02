@@ -2,7 +2,8 @@ import { NavLink, useNavigate } from "react-router-dom";
 import { useAuth } from "../context/AuthContext";
 
 export const NavBar = () => {
-  const { logout } = useAuth();
+  const { logout, user } = useAuth();
+  const isAdmin = user?.role === "admin";
   const navigate = useNavigate();
 
   const linkClass = ({ isActive }: { isActive: boolean }) =>
@@ -30,10 +31,12 @@ export const NavBar = () => {
           <NavLink to="/dashboard" className={linkClass}>
             Dashboard
           </NavLink>
-
-          <NavLink to="/employees" className={linkClass}>
-            Employees
-          </NavLink>
+          
+          {isAdmin && (
+            <NavLink to="/employees" className={linkClass}>
+              Employees
+            </NavLink>
+          )}
 
           <button
             onClick={handleLogout}
