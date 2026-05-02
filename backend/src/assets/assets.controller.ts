@@ -29,6 +29,11 @@ export class AssetsController {
     return this.assetsService.findAll();
   }
 
+  @Get(':id')
+  findOne(@Param('id') id: string) {
+    return this.assetsService.findOne(id);
+  }
+
   @Patch(':id')
   update(@Param('id') id: string, @Body() data: Partial<CreateAssetDto>) {
     return this.assetsService.update(id, data);

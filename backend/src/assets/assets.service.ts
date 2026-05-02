@@ -31,6 +31,16 @@ export class AssetsService {
     return this.assetModel.find().exec();
   }
 
+  async findOne(id: string): Promise<Asset> {
+    const asset = await this.assetModel.findById(id).exec();
+
+    if (!asset) {
+      throw new NotFoundException(`Asset ${id} not found`);
+    }
+
+    return asset;
+  }
+
   async update(id: string, data: Partial<CreateAssetDto>): Promise<Asset> {
     const oldAsset = await this.assetModel.findById(id).exec();
 
