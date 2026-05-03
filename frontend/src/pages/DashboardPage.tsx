@@ -125,6 +125,7 @@ const DashboardPage = () => {
             employees={employees}
             onDelete={removeAsset}
             onUpdate={editAsset}
+            showActions={true}
           />
         )}
       </div>
