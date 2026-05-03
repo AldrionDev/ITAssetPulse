@@ -13,6 +13,7 @@ interface AssetTableProps {
   employees: Employee[];
   onDelete: (id: string) => Promise<void>;
   onUpdate: (id: string, data: Partial<Asset>) => Promise<void>;
+  showActions?: boolean;
 }
 
 export const AssetTable = ({
@@ -20,6 +21,7 @@ export const AssetTable = ({
   employees,
   onDelete,
   onUpdate,
+  showActions = true,
 }: AssetTableProps) => {
   const navigate = useNavigate();
 
@@ -171,7 +173,7 @@ export const AssetTable = ({
                       History
                     </button>
 
-                    {canEdit && (
+                    {showActions && canEdit && (
                       <button
                         onClick={() => setEditingAsset(asset)}
                         className="text-green-600 font-bold text-sm"
@@ -180,7 +182,7 @@ export const AssetTable = ({
                       </button>
                     )}
 
-                    {canDelete && (
+                    {showActions && canDelete && (
                       <button
                         onClick={() => onDelete(asset._id)}
                         className="text-red-500 font-bold text-sm"
