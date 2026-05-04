@@ -7,7 +7,7 @@ import { NavBar } from "./components/NavBar";
 import { AssetDetailPage } from "./pages/AssetDetailPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AssetsPage from "./pages/AssetsPage";
-
+import { QRScanPage } from "./pages/QRScanPage";
 
 function App() {
   return (
@@ -52,6 +52,16 @@ function App() {
               <ProtectedRoute>
                 <NavBar />
                 <AssetsPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/scan"
+            element={
+              <ProtectedRoute>
+                <NavBar />
+                <QRScanPage />
               </ProtectedRoute>
             }
           />
