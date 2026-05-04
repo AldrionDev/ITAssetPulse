@@ -42,8 +42,8 @@ export const NavBar = () => {
 
           {isAdmin && (
             <>
-              <NavLink to="/admin" className={linkClass}>
-                Administration
+              <NavLink to="/admin/assets" className={linkClass}>
+                Asset Administration
               </NavLink>
 
               <NavLink to="/employees" className={linkClass}>
