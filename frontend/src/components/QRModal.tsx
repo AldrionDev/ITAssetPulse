@@ -65,7 +65,7 @@ export const QRModal = ({ asset, onClose }: QRModalProps) => {
           ref={printRef}
           className="bg-white p-4 inline-block border rounded-2xl mb-8"
         >
-          <QRCodeSVG value={asset.serialNumber} size={200} level="H" />
+          <QRCodeSVG value={`/assets/${asset._id}`} size={200} level="H" />
         </div>
 
         <div className="flex flex-col gap-3">

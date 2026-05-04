@@ -102,7 +102,7 @@ export const AssetTable = ({
                         onClick={() => setSelectedQR(asset)}
                         className="cursor-pointer p-1.5 bg-white border border-gray-200 rounded-lg hover:border-indigo-500 transition-all active:scale-90"
                       >
-                        <QRCodeSVG value={asset.serialNumber} size={28} />
+                        <QRCodeSVG value={`/assets/${asset._id}`} size={28} />
                       </div>
 
                       <div>
