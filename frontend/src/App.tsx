@@ -8,7 +8,7 @@ import { AssetDetailPage } from "./pages/AssetDetailPage";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AssetsPage from "./pages/AssetsPage";
 import { QRScanPage } from "./pages/QRScanPage";
-
+import { AssetAdministrationPage } from "./pages/AssetAdministrationPage";
 function App() {
   return (
     <AuthProvider>
@@ -62,6 +62,16 @@ function App() {
               <ProtectedRoute>
                 <NavBar />
                 <QRScanPage />
+              </ProtectedRoute>
+            }
+          />
+
+          <Route
+            path="/admin/assets"
+            element={
+              <ProtectedRoute allowedRoles={["admin"]}>
+                <NavBar />
+                <AssetAdministrationPage />
               </ProtectedRoute>
             }
           />
