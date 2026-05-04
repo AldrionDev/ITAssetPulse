@@ -21,34 +21,33 @@ import { RolesGuard } from '../auth/roles.guard';
 export class AssetsController {
   constructor(private readonly assetsService: AssetsService) {}
 
-  @UseGuards(RolesGuard)
-  @Roles('admin', 'manager')
+  @Roles('admin')
   @Post()
   create(@Body() dto: CreateAssetDto) {
     return this.assetsService.create(dto);
   }
-  @UseGuards(RolesGuard)
+  
   @Roles('admin', 'manager', 'viewer')
   @Get()
   findAll() {
     return this.assetsService.findAll();
   }
 
-  @UseGuards(RolesGuard)
+  
   @Roles('admin', 'manager', 'viewer')
   @Get(':id')
   findOne(@Param('id') id: string) {
     return this.assetsService.findOne(id);
   }
-  @UseGuards(RolesGuard)
+
   @Roles('admin', 'manager')
   @Patch(':id')
   update(@Param('id') id: string, @Body() data: Partial<CreateAssetDto>) {
     return this.assetsService.update(id, data);
   }
 
-  @UseGuards(RolesGuard)
-  @Roles('admin', 'manager')
+  
+  @Roles('admin')
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)
   delete(@Param('id') id: string) {
