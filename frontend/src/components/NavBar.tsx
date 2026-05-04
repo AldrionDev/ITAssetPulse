@@ -32,21 +32,24 @@ export const NavBar = () => {
             Dashboard
           </NavLink>
 
-          <NavLink
-            to="/assets"
-            className={({ isActive }) =>
-              isActive
-                ? "text-indigo-700 font-bold"
-                : "text-gray-600 hover:text-indigo-700"
-            }
-          >
+          <NavLink to="/assets" className={linkClass}>
             Assets
           </NavLink>
 
+          <NavLink to="/scan" className={linkClass}>
+            QR Scan
+          </NavLink>
+
           {isAdmin && (
-            <NavLink to="/employees" className={linkClass}>
-              Employees
-            </NavLink>
+            <>
+              <NavLink to="/admin" className={linkClass}>
+                Administration
+              </NavLink>
+
+              <NavLink to="/employees" className={linkClass}>
+                Employees
+              </NavLink>
+            </>
           )}
 
           <button
