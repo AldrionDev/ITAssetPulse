@@ -1,10 +1,9 @@
 import type { Employee } from "../types/employee.types";
 import { useEffect, useState } from "react";
 import { useAssets } from "../hooks/useAssets";
-import { useAssetFilter } from "../hooks/useAssetFilter";
+
 import { AssetForm } from "../components/AssetForm";
-import { AssetFilter } from "../components/AssetFilter";
-import { AssetTable } from "../components/AssetTable";
+
 import type { NewAsset } from "../types/asset.types";
 import { useDashboardStats } from "../hooks/useDashboardStats";
 import DashboardSummaryCards from "../components/DashboardSummaryCards";
@@ -12,8 +11,7 @@ import RecentlyAddedAssets from "../components/RecentlyAddedAssets";
 import CategoryBreakdown from "../components/CategoryBreakdown";
 
 const DashboardPage = () => {
-  const { assets, loading, loadAssets, addAsset, removeAsset, editAsset } =
-    useAssets();
+  const { assets, loading, loadAssets, addAsset } = useAssets();
 
   const [showForm, setShowForm] = useState(false);
   const [employees, setEmployees] = useState<Employee[]>([]);
@@ -26,18 +24,6 @@ const DashboardPage = () => {
     categoryBreakdown,
     recentlyAddedAssets,
   } = useDashboardStats(assets);
-
-  const {
-    filters,
-    filteredAssets,
-    availableCategories,
-    availableStatuses,
-    updateFilter,
-    resetFilters,
-    hasActiveFilters,
-    totalCount,
-    filteredCount,
-  } = useAssetFilter(assets);
 
   useEffect(() => {
     loadAssets();
@@ -104,29 +90,10 @@ const DashboardPage = () => {
           <RecentlyAddedAssets assets={recentlyAddedAssets} />
         </div>
 
-        <AssetFilter
-          filters={filters}
-          availableCategories={availableCategories}
-          availableStatuses={availableStatuses}
-          onFilterChange={updateFilter}
-          onReset={resetFilters}
-          hasActiveFilters={hasActiveFilters}
-          totalCount={totalCount}
-          filteredCount={filteredCount}
-        />
-
-        {loading ? (
+        {loading && (
           <div className="text-center py-20 text-indigo-600 font-bold animate-pulse text-lg">
             Synchronizing with database...
           </div>
-        ) : (
-          <AssetTable
-            assets={filteredAssets}
-            employees={employees}
-            onDelete={removeAsset}
-            onUpdate={editAsset}
-            showActions={true}
-          />
         )}
       </div>
     </div>
