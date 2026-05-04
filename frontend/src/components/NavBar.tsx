@@ -31,7 +31,18 @@ export const NavBar = () => {
           <NavLink to="/dashboard" className={linkClass}>
             Dashboard
           </NavLink>
-          
+
+          <NavLink
+            to="/assets"
+            className={({ isActive }) =>
+              isActive
+                ? "text-indigo-700 font-bold"
+                : "text-gray-600 hover:text-indigo-700"
+            }
+          >
+            Assets
+          </NavLink>
+
           {isAdmin && (
             <NavLink to="/employees" className={linkClass}>
               Employees
