@@ -20,7 +20,7 @@ export const NavBar = () => {
   };
 
   return (
-    <header className="border-b border-slate-200 bg-white">
+    <header className="sticky top-0 z-50 border-b border-slate-200 bg-white shadow-sm">
       <nav className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
         <div>
           <h1 className="text-lg font-bold text-slate-900">IT Asset Pulse</h1>
