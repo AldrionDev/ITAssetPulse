@@ -1,119 +1,133 @@
 # IT Asset Pulse
 
-> Full-stack IT Asset Management (ITAM) demo application  
+> Full-stack IT Asset Management (ITAM) application  
 > Built with NestJS, React, MongoDB, and Docker  
-> 🚧 DevOps extension in progress (AWS, Terraform, Monitoring)
+> Evolving into a cloud-native DevOps project (AWS, EKS, Terraform)
 
 ---
 
-## 🚀 Overview
+## Overview
 
-IT Asset Pulse is a full-stack demo application that simulates a real-world IT asset management system.
+IT Asset Pulse is a full-stack application that simulates a real-world IT asset management system.
 
 The project demonstrates:
-
-- Backend API development (NestJS)
-- Modern frontend (React)
+- Backend API development with NestJS
+- Modern React frontend
 - Role-based access control (RBAC)
 - Docker-based local development
 - Realistic business workflows
 
-This project is actively evolving into a **DevOps-focused portfolio project**, with planned cloud deployment and infrastructure automation.
-
+The project is being actively extended into a **DevOps-focused, cloud-native system**, including container registry, Kubernetes deployment, infrastructure as code, and monitoring.
 ---
 
-## 🛠 Tech Stack
+## Tech Stack
 
 ### Backend
-
 - NestJS (TypeScript)
 - MongoDB (Mongoose)
 - JWT Authentication
 - Role-based Authorization (RBAC)
 
 ### Frontend
-
 - React (TypeScript)
 - Vite
 - Tailwind CSS
 
 ### DevOps (Current)
-
 - Docker
 - Docker Compose
 
-### DevOps (Planned / In Progress)
-
-- AWS (EC2 → ECS)
+### DevOps (Target Stack)
+- AWS ECR (Container Registry)
+- AWS EKS (Kubernetes)
+- MongoDB Atlas (Managed Database)
 - Terraform (Infrastructure as Code)
-- CI/CD (GitHub Actions)
-- Monitoring (Prometheus + Grafana)
+- GitHub Actions (CI/CD)
+- AWS IAM (Security & Access)
+- S3 (File storage)
+- Prometheus + Grafana (Monitoring)
 
 ---
 
-## 🔐 Core Features
+## Core Features
 
 ### Asset Management
-
 - Create, update, delete assets
 - Asset detail page
 - Search and filtering
 
 ### Role-Based Access Control (RBAC)
-
 - Viewer → read-only
 - Manager → update
 - Admin → full access
 
 Backend secured with:
-
 - JWT authentication
 - RolesGuard
 
 ---
 
 ### Dashboard
-
-- Asset statistics (total / assigned / available / maintenance)
+- Asset statistics
 - Category breakdown
 - Recently added assets
 
 ---
 
 ### Asset History
-
 - Audit log of asset changes
 - Per-asset history tracking
 
 ---
 
 ### QR Code System
-
-- Generate QR codes for assets
+- Generate QR codes
 - Scan QR codes to open asset detail page
 
 ---
 
 ### Employee Assignment
-
 - Assign assets to employees
 - Track department and assignment date
 
 ---
 
-## 🧱 Architecture (Current)
+## Architecture
+
+### Current (Local)
 
 ```text
 Frontend (React)
         ↓
 Backend API (NestJS)
         ↓
-MongoDB
+MongoDB (Docker)
+````
+
+---
+
+### Target (Cloud / DevOps)
+
+```text
+Users
+  ↓
+Load Balancer / Ingress
+  ↓
+Frontend (EKS)
+  ↓
+Backend API (EKS)
+  ↓
+MongoDB Atlas (Managed DB)
+
++ AWS ECR (images)
++ Terraform (infra)
++ S3 (file storage)
++ Monitoring stack
 ```
 
 ---
 
-## ⚙️ Local Development (Docker)
+## Local Development
 
 ### 1. Clone
 
@@ -164,7 +178,7 @@ http://localhost:3000
 
 ---
 
-## 🔑 Demo Users
+## Demo Users
 
 | Role    | Username | Password   |
 | ------- | -------- | ---------- |
@@ -174,23 +188,24 @@ http://localhost:3000
 
 ---
 
-## 🧪 Testing
+## Testing
 
-- Tested with Thunder Client / Postman
-- Verified:
-  - Authentication (JWT)
-  - Role-based access control
-  - Endpoint protection
+* Tested with Thunder Client / Postman
+* Verified:
+
+  * Authentication (JWT)
+  * Role-based access control
+  * Endpoint protection
 
 Expected responses:
 
-- 200 / 201 → success
-- 403 → forbidden
-- 401 → unauthorized
+* 200 / 201 → success
+* 403 → forbidden
+* 401 → unauthorized
 
 ---
 
-## 📦 Project Structure
+## Project Structure
 
 ```text
 backend/
@@ -205,65 +220,130 @@ frontend/
     components/
     pages/
     hooks/
+
+infra/ (planned)
+  terraform/
+  kubernetes/
 ```
 
 ---
 
-## 📈 Roadmap
+## Roadmap
 
-### ✅ Completed (Full-stack)
+### ✅ Full-stack (Completed)
 
-- [x] Asset CRUD
-- [x] Asset detail page
-- [x] Dashboard
-- [x] Search & filtering
-- [x] Employee assignment
-- [x] Asset history (audit log)
-- [x] JWT authentication
-- [x] Backend RBAC (RolesGuard)
-- [x] Protected frontend routes
-- [x] QR code generation
-- [x] QR scanner
-- [x] Admin asset page
-- [x] Dockerized setup
-
----
-
-### 🚧 DevOps Roadmap (Next Phase)
-
-- [ ] Deploy backend to AWS EC2
-- [ ] Deploy full stack with Docker on EC2
-- [ ] Configure Nginx reverse proxy
-- [ ] Add domain + HTTPS
-- [ ] Introduce Terraform (infrastructure as code)
-- [ ] Migrate to ECS (Fargate)
-- [ ] Add CI/CD pipeline (GitHub Actions)
-- [ ] Add monitoring (Prometheus + Grafana)
+* [x] Asset CRUD
+* [x] Asset detail page
+* [x] Dashboard
+* [x] Search & filtering
+* [x] Employee assignment
+* [x] Asset history (audit log)
+* [x] JWT authentication
+* [x] Backend RBAC (RolesGuard)
+* [x] Protected frontend routes
+* [x] QR code system
+* [x] Admin asset page
+* [x] Dockerized setup
 
 ---
 
-## 🎯 Purpose
+## 🚧 DevOps Roadmap
+
+### M5 — Docker & Image Prep
+
+* Clean Docker Compose setup
+* Add `.env.example`
+* Prepare production-ready images
+
+---
+
+### M6 — AWS ECR
+
+* Create private ECR repositories
+* Push frontend and backend images
+* Document image workflow
+
+---
+
+### M7 — EKS Foundation
+
+* Create EKS cluster
+* Configure node groups
+* Enable multi-AZ high availability
+* Install EKS addons
+
+---
+
+### M8 — EKS Deployment
+
+* Create Kubernetes manifests
+* Configure secrets and configs
+* Add ingress and load balancing
+* Deploy application to EKS
+
+---
+
+### M9 — Managed Database
+
+* Migrate to MongoDB Atlas
+* Secure database connection
+
+---
+
+### M10 — IAM & Pod Identity
+
+* Configure AWS IAM roles
+* Enable pod-level permissions
+
+---
+
+### M11 — S3 Integration
+
+* Create S3 bucket
+* Implement file upload/download
+
+---
+
+### M12 — Terraform
+
+* Add Terraform structure
+* Configure remote state (S3 + DynamoDB)
+* Provision infrastructure via code
+
+---
+
+### M13 — Automation & Monitoring
+
+* Add backend health endpoint
+* Create Lambda-based health checks
+* Store reports in S3
+* Add monitoring stack
+
+---
+
+## Purpose
 
 This project was built to:
 
-- Practice full-stack development
-- Implement backend security (RBAC)
-- Work with Docker environments
-- Transition into DevOps engineering
+* Practice full-stack development
+* Implement backend security (RBAC)
+* Work with containerized environments
+* Transition into DevOps and cloud engineering
 
 ---
 
-## 🚀 DevOps Direction
+## DevOps Direction
 
-This project is being extended into a **DevOps-focused system**, including:
+The long-term goal is to transform this application into a **cloud-native system** with:
 
-- Cloud deployment (AWS)
-- Infrastructure automation (Terraform)
-- Container orchestration (ECS)
-- Monitoring and observability
+* Kubernetes-based deployment (EKS)
+* Infrastructure as Code (Terraform)
+* Automated CI/CD pipelines
+* Secure IAM-based access control
+* Monitoring and observability
 
 ---
 
-## 📄 License
+## License
 
 This project is for demonstration and educational purposes.
