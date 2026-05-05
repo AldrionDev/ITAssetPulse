@@ -16,8 +16,7 @@ The project demonstrates:
 - Role-based access control (RBAC)
 - Docker-based local development
 - Realistic business workflows
-
-The project is being actively extended into a **DevOps-focused, cloud-native system**, including container registry, Kubernetes deployment, infrastructure as code, and monitoring.
+  
 ---
 
 ## Tech Stack
