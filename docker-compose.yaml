@@ -3,8 +3,6 @@ services:
     image: mongo:6.0
     container_name: asset-db
     restart: unless-stopped
-    ports:
-      - "27017:27017"
     volumes:
       - mongo-data:/data/db
     networks:
@@ -59,7 +57,7 @@ services:
     ports:
       - "5173:80"
     environment:
-      - VITE_API_URL=http://backend:3000
+      - VITE_API_URL=http://localhost:3000
     networks:
       - asset-network
     depends_on:
