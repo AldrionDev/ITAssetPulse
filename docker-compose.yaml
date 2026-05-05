@@ -24,11 +24,11 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - NODE_ENV=production
-      - MONGO_URI=mongodb://mongodb:27017/asset-manager
-      - JWT_SECRET=your-secret-key-change-in-production
-      - ADMIN_USERNAME=admin
-      - ADMIN_PASSWORD=secret123
+      - NODE_ENV=${NODE_ENV:-production}
+      - MONGO_URI=${MONGO_URI:-mongodb://mongodb:27017/asset-manager}
+      - JWT_SECRET=${JWT_SECRET}
+      - ADMIN_USERNAME=${ADMIN_USERNAME:-admin}
+      - ADMIN_PASSWORD=${ADMIN_PASSWORD}
     networks:
       - asset-network
     depends_on:
@@ -57,7 +57,7 @@ services:
     ports:
       - "5173:80"
     environment:
-      - VITE_API_URL=http://localhost:3000
+      - VITE_API_URL=${VITE_API_URL:-http://localhost:3000}
     networks:
       - asset-network
     depends_on:
