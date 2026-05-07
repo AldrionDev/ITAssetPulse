@@ -1,0 +1,3 @@
+project_name = "itassetpulse"
+environment  = "demo"
+aws_region   = "eu-north-1"

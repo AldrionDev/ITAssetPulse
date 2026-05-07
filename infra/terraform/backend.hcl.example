@@ -1,0 +1,5 @@
+bucket       = "itassetpulse-demo-terraform-state-554422868760"
+key          = "itassetpulse/demo/terraform.tfstate"
+region       = "eu-north-1"
+encrypt      = true
+use_lockfile = true
