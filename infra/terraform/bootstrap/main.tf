@@ -1,7 +1,15 @@
 data "aws_caller_identity" "current" {}
 
 locals {
-  state_bucket_name = "${var.project_name}-${var.environment}-terraform-state-${data.aws_caller_identity.current.account_id}"
+  name_prefix       = "${var.project_name}-${var.environment}"
+  state_bucket_name = "${local.name_prefix}-terraform-state-${data.aws_caller_identity.current.account_id}"
+
+  common_tags = {
+    Project     = var.project_name
+    Environment = var.environment
+    ManagedBy   = "terraform"
+    Purpose     = "terraform-state"
+  }
 }
 
 resource "aws_s3_bucket" "terraform_state" {
