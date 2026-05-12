@@ -6,6 +6,11 @@ image_tag = "latest"
 
 eks_cluster_version = "1.34"
 
+eks_node_instance_types = ["t3.small"]
+eks_node_desired_size   = 1
+eks_node_min_size       = 1
+eks_node_max_size       = 2
+
 vpc_cidr = "10.0.0.0/16"
 
 public_subnet_cidrs = [

@@ -130,3 +130,23 @@ output "eks_cluster_version" {
   description = "Kubernetes version used by the EKS cluster."
   value       = aws_eks_cluster.main.version
 }
+
+output "eks_node_group_name" {
+  description = "Name of the EKS managed node group."
+  value       = aws_eks_node_group.main.node_group_name
+}
+
+output "eks_node_group_arn" {
+  description = "ARN of the EKS managed node group."
+  value       = aws_eks_node_group.main.arn
+}
+
+output "eks_node_group_role_arn" {
+  description = "IAM role ARN used by the EKS managed node group."
+  value       = aws_iam_role.eks_node_group.arn
+}
+
+output "eks_node_instance_types" {
+  description = "EC2 instance types used by the EKS managed node group."
+  value       = aws_eks_node_group.main.instance_types
+}
