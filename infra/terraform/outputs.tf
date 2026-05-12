@@ -105,3 +105,28 @@ output "frontend_image_uri" {
   description = "Full frontend Docker image URI including the configured image tag."
   value       = "${aws_ecr_repository.frontend.repository_url}:${var.image_tag}"
 }
+
+output "eks_cluster_name" {
+  description = "Name of the EKS cluster."
+  value       = aws_eks_cluster.main.name
+}
+
+output "eks_cluster_endpoint" {
+  description = "Endpoint URL of the EKS cluster."
+  value       = aws_eks_cluster.main.endpoint
+}
+
+output "eks_cluster_security_group_id" {
+  description = "Security group ID created by EKS for the cluster."
+  value       = aws_eks_cluster.main.vpc_config[0].cluster_security_group_id
+}
+
+output "eks_cluster_arn" {
+  description = "ARN of the EKS cluster."
+  value       = aws_eks_cluster.main.arn
+}
+
+output "eks_cluster_version" {
+  description = "Kubernetes version used by the EKS cluster."
+  value       = aws_eks_cluster.main.version
+}

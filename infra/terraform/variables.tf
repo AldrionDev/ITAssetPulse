@@ -40,3 +40,9 @@ variable "image_tag" {
   default     = "latest"
 }
 
+variable "eks_cluster_version" {
+  description = "Kubernetes version for the EKS cluster"
+  type        = string
+  default     = "1.34"
+}
+
