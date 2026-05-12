@@ -34,3 +34,9 @@ variable "private_subnet_cidrs" {
   default     = ["10.0.11.0/24", "10.0.12.0/24"]
 }
 
+variable "image_tag" {
+  description = "Docker image tag used for ECR image URI outputs"
+  type        = string
+  default     = "latest"
+}
+

@@ -72,3 +72,36 @@ output "private_route_table_id" {
   description = "ID of the private route table."
   value       = aws_route_table.private.id
 }
+
+
+# --------------- ECR outputs ---------------------------------
+
+output "backend_ecr_repository_name" {
+  description = "Name of the backend ECR repository."
+  value       = aws_ecr_repository.backend.name
+}
+
+output "frontend_ecr_repository_name" {
+  description = "Name of the frontend ECR repository."
+  value       = aws_ecr_repository.frontend.name
+}
+
+output "backend_ecr_repository_url" {
+  description = "URL of the backend ECR repository."
+  value       = aws_ecr_repository.backend.repository_url
+}
+
+output "frontend_ecr_repository_url" {
+  description = "URL of the frontend ECR repository."
+  value       = aws_ecr_repository.frontend.repository_url
+}
+
+output "backend_image_uri" {
+  description = "Full backend image URI including the configured image tag."
+  value       = "${aws_ecr_repository.backend.repository_url}:${var.image_tag}"
+}
+
+output "frontend_image_uri" {
+  description = "Full frontend Docker image URI including the configured image tag."
+  value       = "${aws_ecr_repository.frontend.repository_url}:${var.image_tag}"
+}
