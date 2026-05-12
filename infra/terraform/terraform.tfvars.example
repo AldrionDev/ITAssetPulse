@@ -2,6 +2,8 @@ project_name = "itassetpulse"
 environment  = "demo"
 aws_region   = "eu-north-1"
 
+image_tag = "latest"
+
 vpc_cidr = "10.0.0.0/16"
 
 public_subnet_cidrs = [
