@@ -1,10 +1,10 @@
 output "project_name" {
-  description = "Project name used by Terraform."
+  description = "Project name used for naming and tagging AWS resources."
   value       = var.project_name
 }
 
 output "environment" {
-  description = "Demo environment name."
+  description = "Environment name used for this Terraform deployment."
   value       = var.environment
 }
 
@@ -44,22 +44,22 @@ output "private_subnet_ids" {
 }
 
 output "availability_zones" {
-  description = "Availability Zones used by the subnets."
+  description = "Availability Zones used by the public and private subnets."
   value       = slice(data.aws_availability_zones.available.names, 0, length(var.public_subnet_cidrs))
 }
 
 output "internet_gateway_id" {
-  description = "ID of the Internet Gateway."
+  description = "ID of the Internet Gateway attached to the VPC."
   value       = aws_internet_gateway.main.id
 }
 
 output "nat_gateway_id" {
-  description = "ID of the NAT Gateway."
+  description = "ID of the NAT Gateway used for private subnet outbound internet access."
   value       = aws_nat_gateway.main.id
 }
 
 output "nat_gateway_public_ip" {
-  description = "Public IP address of the NAT Gateway."
+  description = "Public IP address allocated to the NAT Gateway."
   value       = aws_eip.nat.public_ip
 }
 
