@@ -20,13 +20,17 @@ Currently included:
 - ECR repository for backend Docker image
 - ECR repository for frontend Docker image
 - ECR lifecycle policies
-- Terraform outputs for networking and ECR resources
+- EKS cluster
+- EKS managed node group
+- Terraform outputs for networking, ECR, and EKS resources
+- EKS cluster
+- EKS managed node group
+- EKS IAM roles for the cluster and worker nodes
 
 Not included yet:
 
 - EC2 application deployment
 - ECS service
-- EKS cluster
 - Kubernetes manifests
 - Load balancer
 - Managed database
@@ -236,6 +240,8 @@ The main Terraform configuration currently creates:
 - Route tables
 - ECR repositories
 - ECR lifecycle policies
+- EKS cluster
+- EKS managed node group
 
 ---
 
@@ -248,9 +254,9 @@ Created ECR repositories:
 - Backend: `itassetpulse-demo-backend-ecr`
 - Frontend: `itassetpulse-demo-frontend-ecr`
 
-These repositories are used to store Docker images before deploying the application to AWS services such as ECS or EKS in later milestones.
+These repositories are used to store Docker images before deploying the application to AWS services such as Kubernetes workloads on EKS.
 
-This milestone only creates the image registry layer. It does not deploy the application to AWS yet.
+The ECR milestone only creates the image registry layer. It does not deploy the application to AWS.
 
 ---
 
@@ -454,6 +460,398 @@ git-commit-sha
 ```
 
 Using unique tags makes deployments easier to track and roll back.
+
+---
+
+## EKS and kubectl access
+
+This Terraform configuration creates an Amazon EKS cluster and a managed node group for the ITAssetPulse demo environment.
+
+Created EKS resources:
+
+- EKS cluster: `itassetpulse-demo-eks`
+- EKS managed node group: `itassetpulse-demo-node-group`
+- Worker nodes are placed in private subnets
+- EKS cluster IAM role is managed by Terraform
+- EKS node group IAM role is managed by Terraform
+
+This milestone only creates the Kubernetes cluster layer. It does not deploy the application yet.
+
+---
+
+## EKS cost note
+
+EKS can create AWS costs even when no application is deployed.
+
+Cost-related resources include:
+
+- EKS control plane
+- NAT Gateway
+- EC2 worker node in the managed node group
+- Data transfer, depending on usage
+
+This project uses a small demo setup:
+
+```text
+EKS node instance type: t3.small
+Desired node count: 1
+Minimum node count: 1
+Maximum node count: 2
+```
+
+After testing, decide whether to keep the cluster running or destroy it to avoid ongoing costs.
+
+---
+
+## EKS prerequisites
+
+Before accessing the cluster with kubectl, make sure:
+
+- AWS CLI is installed and configured
+- kubectl is installed
+- Terraform has been applied successfully
+- The EKS cluster exists
+- The EKS node group is active
+- You are using the correct AWS account
+- You are using the correct AWS region: `eu-north-1`
+
+Verify your AWS identity:
+
+```bash
+aws sts get-caller-identity
+```
+
+Expected AWS account:
+
+```text
+554422868760
+```
+
+---
+
+## Get EKS values from Terraform
+
+From the Terraform folder:
+
+```bash
+cd infra/terraform
+
+terraform output eks_cluster_name
+terraform output eks_node_group_name
+terraform output eks_cluster_endpoint
+```
+
+Expected cluster name:
+
+```text
+"itassetpulse-demo-eks"
+```
+
+Expected node group name:
+
+```text
+"itassetpulse-demo-node-group"
+```
+
+Useful EKS outputs:
+
+```bash
+terraform output eks_cluster_name
+terraform output eks_cluster_endpoint
+terraform output eks_cluster_security_group_id
+terraform output eks_cluster_arn
+terraform output eks_cluster_version
+terraform output eks_node_group_name
+terraform output eks_node_group_arn
+terraform output eks_node_group_role_arn
+terraform output eks_node_instance_types
+```
+
+---
+
+## Verify the EKS cluster
+
+Check that the EKS cluster is active:
+
+```bash
+aws eks describe-cluster \
+  --name itassetpulse-demo-eks \
+  --region eu-north-1 \
+  --query "cluster.status"
+```
+
+Expected output:
+
+```text
+"ACTIVE"
+```
+
+---
+
+## Verify the EKS managed node group
+
+Check that the managed node group is active:
+
+```bash
+aws eks describe-nodegroup \
+  --cluster-name itassetpulse-demo-eks \
+  --nodegroup-name itassetpulse-demo-node-group \
+  --region eu-north-1 \
+  --query "nodegroup.status"
+```
+
+Expected output:
+
+```text
+"ACTIVE"
+```
+
+Verify that the node group uses private subnets:
+
+```bash
+aws eks describe-nodegroup \
+  --cluster-name itassetpulse-demo-eks \
+  --nodegroup-name itassetpulse-demo-node-group \
+  --region eu-north-1 \
+  --query "nodegroup.subnets"
+```
+
+Expected subnet IDs should match the Terraform private subnet output:
+
+```bash
+terraform output private_subnet_ids
+```
+
+---
+
+## Update local kubeconfig
+
+Run:
+
+```bash
+aws eks update-kubeconfig \
+  --region eu-north-1 \
+  --name itassetpulse-demo-eks
+```
+
+Expected output:
+
+```text
+Updated context arn:aws:eks:eu-north-1:554422868760:cluster/itassetpulse-demo-eks in ~/.kube/config
+```
+
+This command updates your local kubeconfig file so kubectl can connect to the EKS cluster.
+
+It does not create or change AWS infrastructure.
+
+---
+
+## Test kubectl access
+
+Check the current kubectl context:
+
+```bash
+kubectl config current-context
+```
+
+Expected result should reference:
+
+```text
+arn:aws:eks:eu-north-1:554422868760:cluster/itassetpulse-demo-eks
+```
+
+Check worker nodes:
+
+```bash
+kubectl get nodes
+```
+
+Expected result:
+
+```text
+NAME                                      STATUS   ROLES    AGE   VERSION
+ip-10-0-x-x.eu-north-1.compute.internal   Ready    <none>   ...   v1.34...
+```
+
+The important part is:
+
+```text
+STATUS = Ready
+```
+
+Check all pods:
+
+```bash
+kubectl get pods -A
+```
+
+You should see Kubernetes system pods, for example:
+
+```text
+kube-system   aws-node-...
+kube-system   coredns-...
+kube-system   kube-proxy-...
+```
+
+Useful kubectl commands:
+
+```bash
+kubectl cluster-info
+kubectl get nodes
+kubectl get nodes -o wide
+kubectl get pods -A
+kubectl get namespaces
+kubectl get svc
+```
+
+---
+
+## EKS troubleshooting
+
+### AWS CLI is not configured
+
+Check your AWS identity:
+
+```bash
+aws sts get-caller-identity
+```
+
+If this fails, configure AWS CLI:
+
+```bash
+aws configure
+```
+
+---
+
+### Wrong AWS account
+
+Check:
+
+```bash
+aws sts get-caller-identity
+```
+
+The account should be:
+
+```text
+554422868760
+```
+
+---
+
+### Wrong AWS region
+
+This project currently uses:
+
+```text
+eu-north-1
+```
+
+Always include:
+
+```bash
+--region eu-north-1
+```
+
+when using AWS CLI EKS commands.
+
+---
+
+### kubectl is not installed
+
+Check:
+
+```bash
+kubectl version --client
+```
+
+If the command is not found, install kubectl first.
+
+---
+
+### kubeconfig is not updated
+
+Run:
+
+```bash
+aws eks update-kubeconfig \
+  --region eu-north-1 \
+  --name itassetpulse-demo-eks
+```
+
+Then check:
+
+```bash
+kubectl config current-context
+```
+
+---
+
+### Unauthorized or access denied
+
+First check which AWS identity is active:
+
+```bash
+aws sts get-caller-identity
+```
+
+Then update kubeconfig again:
+
+```bash
+aws eks update-kubeconfig \
+  --region eu-north-1 \
+  --name itassetpulse-demo-eks
+```
+
+If the cluster was created with a different IAM user or role, use that same identity or configure EKS access for the current identity.
+
+---
+
+### Nodes are not ready
+
+Check the node group status:
+
+```bash
+aws eks describe-nodegroup \
+  --cluster-name itassetpulse-demo-eks \
+  --nodegroup-name itassetpulse-demo-node-group \
+  --region eu-north-1 \
+  --query "nodegroup.status"
+```
+
+Check Kubernetes system pods:
+
+```bash
+kubectl get pods -n kube-system
+```
+
+If the node group was just created, wait a few minutes and check again.
+
+---
+
+### EKS creation takes time
+
+Creating or updating EKS resources can take several minutes.
+
+Check cluster status:
+
+```bash
+aws eks describe-cluster \
+  --name itassetpulse-demo-eks \
+  --region eu-north-1 \
+  --query "cluster.status"
+```
+
+Check node group status:
+
+```bash
+aws eks describe-nodegroup \
+  --cluster-name itassetpulse-demo-eks \
+  --nodegroup-name itassetpulse-demo-node-group \
+  --region eu-north-1 \
+  --query "nodegroup.status"
+```
 
 ---
 
