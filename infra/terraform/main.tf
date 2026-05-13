@@ -294,3 +294,108 @@ resource "aws_eks_node_group" "main" {
     Name = "${local.name_prefix}-node-group"
   }
 }
+
+# ---------------------- EKS Addons --------------------------------------------------------
+
+resource "aws_eks_addon" "vpc_cni" {
+  cluster_name = aws_eks_cluster.main.name
+  addon_name   = "vpc-cni"
+
+  depends_on = [
+    aws_eks_node_group.main
+  ]
+
+  tags = {
+    Name = "${local.name_prefix}-vpc-cni-addon"
+  }
+}
+
+resource "aws_eks_addon" "kube_proxy" {
+  cluster_name = aws_eks_cluster.main.name
+  addon_name   = "kube-proxy"
+
+  depends_on = [
+    aws_eks_node_group.main
+  ]
+
+  tags = {
+    Name = "${local.name_prefix}-kube-proxy-addon"
+  }
+}
+
+resource "aws_eks_addon" "coredns" {
+  cluster_name = aws_eks_cluster.main.name
+  addon_name   = "coredns"
+
+  depends_on = [
+    aws_eks_node_group.main
+  ]
+
+  tags = {
+    Name = "${local.name_prefix}-coredns-addon"
+  }
+}
+
+resource "aws_eks_addon" "pod_identity_agent" {
+  cluster_name = aws_eks_cluster.main.name
+  addon_name   = "eks-pod-identity-agent"
+
+  depends_on = [
+    aws_eks_node_group.main
+  ]
+
+  tags = {
+    Name = "${local.name_prefix}-pod-identity-agent-addon"
+  }
+}
+
+# ---------------------- EBS CSI Driver Addon --------------------------------------------------------
+
+resource "aws_iam_role" "ebs_csi_driver" {
+  name = "${local.name_prefix}-ebs-csi-driver-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "pods.eks.amazonaws.com"
+        }
+        Action = [
+          "sts:AssumeRole",
+          "sts:TagSession"
+        ]
+      }
+    ]
+  })
+
+  tags = {
+    Name = "${local.name_prefix}-ebs-csi-driver-role"
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "ebs_csi_driver_policy" {
+  role       = aws_iam_role.ebs_csi_driver.name
+  policy_arn = "arn:aws:iam::aws:policy/service-role/AmazonEBSCSIDriverPolicy"
+}
+
+resource "aws_eks_addon" "ebs_csi_driver" {
+  cluster_name = aws_eks_cluster.main.name
+  addon_name   = "aws-ebs-csi-driver"
+
+  pod_identity_association {
+    role_arn        = aws_iam_role.ebs_csi_driver.arn
+    service_account = "ebs-csi-controller-sa"
+  }
+
+  depends_on = [
+    aws_eks_node_group.main,
+    aws_eks_addon.pod_identity_agent,
+    aws_iam_role_policy_attachment.ebs_csi_driver_policy
+  ]
+
+  tags = {
+    Name = "${local.name_prefix}-ebs-csi-driver-addon"
+  }
+}
