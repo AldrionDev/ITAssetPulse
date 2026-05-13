@@ -399,3 +399,95 @@ resource "aws_eks_addon" "ebs_csi_driver" {
     Name = "${local.name_prefix}-ebs-csi-driver-addon"
   }
 }
+
+# ---------------------- AWS Load Balancer Controller --------------------------------------------------------
+
+resource "aws_iam_policy" "load_balancer_controller" {
+  name        = "${local.name_prefix}-aws-load-balancer-controller-policy"
+  description = "IAM policy for AWS Load Balancer Controller"
+  policy      = file("${path.module}/aws-load-balancer-controller-iam-policy.json")
+
+  tags = {
+    Name = "${local.name_prefix}-aws-load-balancer-controller-policy"
+  }
+}
+
+resource "aws_iam_role" "load_balancer_controller" {
+  name = "${local.name_prefix}-aws-load-balancer-controller-role"
+
+  assume_role_policy = jsonencode({
+    Version = "2012-10-17"
+    Statement = [
+      {
+        Effect = "Allow"
+        Principal = {
+          Service = "pods.eks.amazonaws.com"
+        }
+        Action = [
+          "sts:AssumeRole",
+          "sts:TagSession"
+        ]
+      }
+    ]
+  })
+
+  tags = {
+    Name = "${local.name_prefix}-aws-load-balancer-controller-role"
+  }
+}
+
+resource "aws_iam_role_policy_attachment" "load_balancer_controller" {
+  role       = aws_iam_role.load_balancer_controller.name
+  policy_arn = aws_iam_policy.load_balancer_controller.arn
+}
+
+resource "aws_eks_pod_identity_association" "load_balancer_controller" {
+  cluster_name    = aws_eks_cluster.main.name
+  namespace       = "kube-system"
+  service_account = "aws-load-balancer-controller"
+  role_arn        = aws_iam_role.load_balancer_controller.arn
+
+  depends_on = [
+    aws_eks_addon.pod_identity_agent,
+    aws_iam_role_policy_attachment.load_balancer_controller
+  ]
+
+  tags = {
+    Name = "${local.name_prefix}-aws-load-balancer-controller-pod-identity"
+  }
+}
+
+resource "helm_release" "load_balancer_controller" {
+  name       = "aws-load-balancer-controller"
+  repository = "https://aws.github.io/eks-charts"
+  chart      = "aws-load-balancer-controller"
+  namespace  = "kube-system"
+  version    = "1.14.0"
+
+  set = [
+    {
+      name  = "clusterName"
+      value = aws_eks_cluster.main.name
+    },
+    {
+      name  = "region"
+      value = var.aws_region
+    },
+    {
+      name  = "vpcId"
+      value = aws_vpc.main.id
+    },
+    {
+      name  = "serviceAccount.create"
+      value = "true"
+    },
+    {
+      name  = "serviceAccount.name"
+      value = "aws-load-balancer-controller"
+    }
+  ]
+
+  depends_on = [
+    aws_eks_pod_identity_association.load_balancer_controller
+  ]
+}

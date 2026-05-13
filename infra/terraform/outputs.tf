@@ -166,3 +166,13 @@ output "ebs_csi_driver_role_arn" {
   description = "IAM role ARN used by the EBS CSI driver addon."
   value       = aws_iam_role.ebs_csi_driver.arn
 }
+
+output "load_balancer_controller_role_arn" {
+  description = "IAM role ARN used by the AWS Load Balancer Controller."
+  value       = aws_iam_role.load_balancer_controller.arn
+}
+
+output "load_balancer_controller_release_name" {
+  description = "Helm release name for the AWS Load Balancer Controller."
+  value       = helm_release.load_balancer_controller.name
+}
