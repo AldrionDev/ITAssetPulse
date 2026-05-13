@@ -75,3 +75,16 @@ variable "kubernetes_namespace" {
   type        = string
   default     = "itassetpulse"
 }
+
+variable "mongodb_uri" {
+  description = "MongoDB connection string used bz the backend application"
+  type        = string
+  sensitive   = true
+}
+
+variable "jwt_secret" {
+  description = "JWT secret used bz the backend application"
+  type        = string
+  sensitive   = true
+}
+
