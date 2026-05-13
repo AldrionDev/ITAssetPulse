@@ -201,3 +201,13 @@ output "backend_service_name" {
   description = "Name of the Kubernetes Service exposing the backend application inside the cluster."
   value       = kubernetes_service.backend.metadata[0].name
 }
+
+output "frontend_deployment_name" {
+  description = "Name of the Kubernetes Deployment running the frontend application."
+  value       = kubernetes_deployment.frontend.metadata[0].name
+}
+
+output "frontend_service_name" {
+  description = "Name of the Kubernetes Service exposing the frontend application inside the cluster."
+  value       = kubernetes_service.frontend.metadata[0].name
+}

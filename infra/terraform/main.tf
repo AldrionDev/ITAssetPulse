@@ -702,3 +702,105 @@ resource "kubernetes_service" "backend" {
     }
   }
 }
+
+# ---------------------- Frontend Application Deployment -------------------------------------------------------
+
+resource "kubernetes_deployment" "frontend" {
+  metadata {
+    name      = "${var.project_name}-frontend"
+    namespace = kubernetes_namespace.itassetpulse.metadata[0].name
+
+    labels = {
+      app         = var.project_name
+      component   = "frontend"
+      environment = var.environment
+      managed-by  = "terraform"
+    }
+  }
+
+  spec {
+    replicas = 1
+
+    strategy {
+      type = "Recreate"
+    }
+
+    selector {
+      match_labels = {
+        app       = var.project_name
+        component = "frontend"
+      }
+    }
+
+    template {
+      metadata {
+        labels = {
+          app         = var.project_name
+          component   = "frontend"
+          environment = var.environment
+        }
+      }
+
+      spec {
+        container {
+          name  = "frontend"
+          image = "${aws_ecr_repository.frontend.repository_url}:${var.image_tag}"
+
+          port {
+            container_port = 80
+          }
+
+          readiness_probe {
+            tcp_socket {
+              port = 80
+            }
+
+            initial_delay_seconds = 10
+            period_seconds        = 10
+          }
+
+          liveness_probe {
+            tcp_socket {
+              port = 80
+            }
+
+            initial_delay_seconds = 20
+            period_seconds        = 20
+          }
+        }
+      }
+    }
+  }
+}
+
+# ---------------------- Frontend Application Service ----------------------------------------------------------
+
+resource "kubernetes_service" "frontend" {
+  metadata {
+    name      = "${var.project_name}-frontend-service"
+    namespace = kubernetes_namespace.itassetpulse.metadata[0].name
+
+    labels = {
+      app         = var.project_name
+      component   = "frontend"
+      environment = var.environment
+      managed-by  = "terraform"
+    }
+  }
+
+  spec {
+    type = "ClusterIP"
+
+    selector = {
+      app       = var.project_name
+      component = "frontend"
+    }
+
+    port {
+      name        = "http"
+      port        = 80
+      target_port = 80
+      protocol    = "TCP"
+    }
+  }
+}
