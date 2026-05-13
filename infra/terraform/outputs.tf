@@ -186,3 +186,8 @@ output "app_config_map_name" {
   description = "Name of the base application ConfigMap."
   value       = kubernetes_config_map.app_config.metadata[0].name
 }
+
+output "backend_secret_name" {
+  description = "Name of the Kubernetes Secret used by the backend application."
+  value       = kubernetes_secret.backend.metadata[0].name
+}

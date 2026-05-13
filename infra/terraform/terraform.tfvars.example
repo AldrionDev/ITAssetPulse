@@ -24,3 +24,10 @@ private_subnet_cidrs = [
   "10.0.11.0/24",
   "10.0.12.0/24"
 ]
+
+# Backend application secrets
+# Do not put real secret values in this example file.
+# Copy this file to terraform.tfvars and set real values locally.
+
+mongodb_uri = "mongodb+srv://username:password@example.mongodb.net/itassetpulse?retryWrites=true&w=majority"
+jwt_secret  = "replace-with-a-long-random-local-demo-secret"

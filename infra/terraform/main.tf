@@ -523,3 +523,26 @@ resource "kubernetes_config_map" "app_config" {
     AWS_REGION = var.aws_region
   }
 }
+
+# ---------------------- Kubernetes Application Secrets --------------------------------------------------------
+
+resource "kubernetes_secret" "backend" {
+  metadata {
+    name      = "${var.project_name}-backend-secret"
+    namespace = kubernetes_namespace.itassetpulse.metadata[0].name
+
+    labels = {
+      app         = var.project_name
+      component   = "backend"
+      environment = var.environment
+      managed-by  = "terraform"
+    }
+  }
+
+  data = {
+    MONGODB_URI = var.mongodb_uri
+    JWT_SECRET  = var.jwt_secret
+  }
+
+  type = "Opaque"
+}
