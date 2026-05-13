@@ -150,3 +150,19 @@ output "eks_node_instance_types" {
   description = "EC2 instance types used by the EKS managed node group."
   value       = aws_eks_node_group.main.instance_types
 }
+
+output "eks_addon_names" {
+  description = "EKS addons managed by Terraform."
+  value = [
+    aws_eks_addon.vpc_cni.addon_name,
+    aws_eks_addon.kube_proxy.addon_name,
+    aws_eks_addon.coredns.addon_name,
+    aws_eks_addon.pod_identity_agent.addon_name,
+    aws_eks_addon.ebs_csi_driver.addon_name
+  ]
+}
+
+output "ebs_csi_driver_role_arn" {
+  description = "IAM role ARN used by the EBS CSI driver addon."
+  value       = aws_iam_role.ebs_csi_driver.arn
+}
