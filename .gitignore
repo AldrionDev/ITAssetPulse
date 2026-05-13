@@ -156,3 +156,5 @@ override.tf.json
 
 # Terraform backend local config
 backend.hcl
+
+terraform-state-backup-before-backend-fix.json

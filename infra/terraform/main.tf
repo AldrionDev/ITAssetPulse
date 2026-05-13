@@ -540,9 +540,165 @@ resource "kubernetes_secret" "backend" {
   }
 
   data = {
-    MONGODB_URI = var.mongodb_uri
-    JWT_SECRET  = var.jwt_secret
+    MONGO_URI  = var.mongodb_uri
+    JWT_SECRET = var.jwt_secret
   }
 
   type = "Opaque"
+}
+
+# ---------------------- Backend Application Deployment --------------------------------------------------------
+
+resource "kubernetes_deployment" "backend" {
+  metadata {
+    name      = "${var.project_name}-backend"
+    namespace = kubernetes_namespace.itassetpulse.metadata[0].name
+
+    labels = {
+      app         = var.project_name
+      component   = "backend"
+      environment = var.environment
+      managed-by  = "terraform"
+    }
+  }
+
+  spec {
+    replicas = 1
+
+    strategy {
+      type = "Recreate"
+    }
+
+    selector {
+      match_labels = {
+        app       = var.project_name
+        component = "backend"
+      }
+    }
+
+    template {
+      metadata {
+        labels = {
+          app         = var.project_name
+          component   = "backend"
+          environment = var.environment
+        }
+      }
+
+      spec {
+        container {
+          name  = "backend"
+          image = "${aws_ecr_repository.backend.repository_url}:${var.image_tag}"
+
+          port {
+            container_port = 3000
+          }
+
+          env {
+            name  = "NODE_ENV"
+            value = "production"
+          }
+
+          env {
+            name  = "PORT"
+            value = "3000"
+          }
+
+          env {
+            name = "APP_ENV"
+
+            value_from {
+              config_map_key_ref {
+                name = kubernetes_config_map.app_config.metadata[0].name
+                key  = "APP_ENV"
+              }
+            }
+          }
+
+          env {
+            name = "AWS_REGION"
+
+            value_from {
+              config_map_key_ref {
+                name = kubernetes_config_map.app_config.metadata[0].name
+                key  = "AWS_REGION"
+              }
+            }
+          }
+
+          env {
+            name = "MONGO_URI"
+
+            value_from {
+              secret_key_ref {
+                name = kubernetes_secret.backend.metadata[0].name
+                key  = "MONGO_URI"
+              }
+            }
+          }
+
+          env {
+            name = "JWT_SECRET"
+
+            value_from {
+              secret_key_ref {
+                name = kubernetes_secret.backend.metadata[0].name
+                key  = "JWT_SECRET"
+              }
+            }
+          }
+
+          readiness_probe {
+            tcp_socket {
+              port = 3000
+            }
+
+            initial_delay_seconds = 20
+            period_seconds        = 10
+          }
+
+          liveness_probe {
+            tcp_socket {
+              port = 3000
+            }
+
+            initial_delay_seconds = 30
+            period_seconds        = 20
+          }
+        }
+      }
+    }
+  }
+}
+
+# ---------------------- Backend Application Service -----------------------------------------------------------
+
+resource "kubernetes_service" "backend" {
+  metadata {
+    name      = "${var.project_name}-backend-service"
+    namespace = kubernetes_namespace.itassetpulse.metadata[0].name
+
+    labels = {
+      app         = var.project_name
+      component   = "backend"
+      environment = var.environment
+      managed-by  = "terraform"
+    }
+  }
+
+  spec {
+    type = "ClusterIP"
+
+    selector = {
+      app       = var.project_name
+      component = "backend"
+    }
+
+    port {
+      name        = "http"
+      port        = 3000
+      target_port = 3000
+      protocol    = "TCP"
+    }
+  }
 }
