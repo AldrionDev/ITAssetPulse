@@ -804,3 +804,52 @@ resource "kubernetes_service" "frontend" {
     }
   }
 }
+
+# ---------------------- Application Ingress -------------------------------------------------------------------
+
+resource "kubernetes_ingress_v1" "app" {
+  metadata {
+    name      = "${var.project_name}-ingress"
+    namespace = kubernetes_namespace.itassetpulse.metadata[0].name
+
+    labels = {
+      app         = var.project_name
+      environment = var.environment
+      managed-by  = "terraform"
+    }
+
+    annotations = {
+      "kubernetes.io/ingress.class"                = "alb"
+      "alb.ingress.kubernetes.io/scheme"           = "internet-facing"
+      "alb.ingress.kubernetes.io/target-type"      = "ip"
+      "alb.ingress.kubernetes.io/listen-ports"     = jsonencode([{ HTTP = 80 }])
+      "alb.ingress.kubernetes.io/healthcheck-path" = "/"
+    }
+  }
+
+  spec {
+    rule {
+      http {
+        path {
+          path      = "/"
+          path_type = "Prefix"
+
+          backend {
+            service {
+              name = kubernetes_service.frontend.metadata[0].name
+
+              port {
+                number = 80
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+
+  depends_on = [
+    helm_release.load_balancer_controller,
+    kubernetes_service.frontend
+  ]
+}

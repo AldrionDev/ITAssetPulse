@@ -211,3 +211,16 @@ output "frontend_service_name" {
   description = "Name of the Kubernetes Service exposing the frontend application inside the cluster."
   value       = kubernetes_service.frontend.metadata[0].name
 }
+
+output "app_ingress_name" {
+  description = "Name of the Kubernetes Ingress exposing the application."
+  value       = kubernetes_ingress_v1.app.metadata[0].name
+}
+
+output "app_ingress_hostname" {
+  description = "AWS Load Balancer hostname created for the application Ingress."
+  value = try(
+    kubernetes_ingress_v1.app.status[0].load_balancer[0].ingress[0].hostname,
+    null
+  )
+}
