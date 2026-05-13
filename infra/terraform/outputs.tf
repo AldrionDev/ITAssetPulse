@@ -191,3 +191,13 @@ output "backend_secret_name" {
   description = "Name of the Kubernetes Secret used by the backend application."
   value       = kubernetes_secret.backend.metadata[0].name
 }
+
+output "backend_deployment_name" {
+  description = "Name of the Kubernetes Deployment running the backend application."
+  value       = kubernetes_deployment.backend.metadata[0].name
+}
+
+output "backend_service_name" {
+  description = "Name of the Kubernetes Service exposing the backend application inside the cluster."
+  value       = kubernetes_service.backend.metadata[0].name
+}
