@@ -69,3 +69,9 @@ variable "eks_node_max_size" {
   type        = number
   default     = 2
 }
+
+variable "kubernetes_namespace" {
+  description = "Kubernetes namespace for the ITAssetPulse application."
+  type        = string
+  default     = "itassetpulse"
+}

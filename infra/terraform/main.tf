@@ -491,3 +491,35 @@ resource "helm_release" "load_balancer_controller" {
     aws_eks_pod_identity_association.load_balancer_controller
   ]
 }
+
+# ---------------------- Kubernetes Namespace and Base Config --------------------------------------------------------
+
+resource "kubernetes_namespace" "itassetpulse" {
+  metadata {
+    name = var.kubernetes_namespace
+
+    labels = {
+      app         = var.project_name
+      environment = var.environment
+      managed-by  = "terraform"
+    }
+  }
+}
+
+resource "kubernetes_config_map" "app_config" {
+  metadata {
+    name      = "${var.project_name}-config"
+    namespace = kubernetes_namespace.itassetpulse.metadata[0].name
+
+    labels = {
+      app         = var.project_name
+      environment = var.environment
+      managed-by  = "terraform"
+    }
+  }
+
+  data = {
+    APP_ENV    = var.environment
+    AWS_REGION = var.aws_region
+  }
+}

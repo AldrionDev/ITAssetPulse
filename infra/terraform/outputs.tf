@@ -176,3 +176,13 @@ output "load_balancer_controller_release_name" {
   description = "Helm release name for the AWS Load Balancer Controller."
   value       = helm_release.load_balancer_controller.name
 }
+
+output "kubernetes_namespace" {
+  description = "Kubernetes namespace used by the ITAssetPulse application."
+  value       = kubernetes_namespace.itassetpulse.metadata[0].name
+}
+
+output "app_config_map_name" {
+  description = "Name of the base application ConfigMap."
+  value       = kubernetes_config_map.app_config.metadata[0].name
+}
