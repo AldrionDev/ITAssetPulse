@@ -158,3 +158,4 @@ override.tf.json
 backend.hcl
 
 terraform-state-backup-before-backend-fix.json
+terraform-state-backup-before-frontend-fix.json
