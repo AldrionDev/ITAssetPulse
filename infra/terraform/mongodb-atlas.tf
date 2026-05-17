@@ -1,3 +1,7 @@
+locals {
+  backend_mongodb_uri = "mongodb+srv://${urlencode(var.atlas_database_username)}:${urlencode(var.atlas_database_password)}@${var.mongodb_atlas_srv_host}/${var.mongodb_database_name}?retryWrites=true&w=majority&appName=${urlencode(var.mongodb_atlas_app_name)}"
+}
+
 resource "mongodbatlas_database_user" "backend" {
   project_id         = var.atlas_project_id
   username           = var.atlas_database_username

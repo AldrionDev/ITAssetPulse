@@ -540,7 +540,7 @@ resource "kubernetes_secret" "backend" {
   }
 
   data = {
-    MONGO_URI  = var.mongodb_uri
+    MONGO_URI  = local.backend_mongodb_uri
     JWT_SECRET = var.jwt_secret
   }
 
