@@ -39,3 +39,8 @@ jwt_secret  = "replace-with-a-long-random-local-demo-secret"
 atlas_public_key  = "replace-with-your-atlas-public-api-key"
 atlas_private_key = "replace-with-your-atlas-private-api-key"
 atlas_project_id  = "replace-with-your-existing-atlas-project-id"
+
+# MongoDB Atlas connection settings
+# Host only, without protocol, username, or password.
+mongodb_atlas_srv_host = "replace-with-your-atlas-cluster-host.mongodb.net"
+mongodb_atlas_app_name = "itassetpulse-demo"

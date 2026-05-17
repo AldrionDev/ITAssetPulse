@@ -4,6 +4,7 @@ import { AssetTable } from "../components/AssetTable";
 import { useAssets } from "../hooks/useAssets";
 import type { Employee } from "../types/employee.types";
 import type { NewAsset } from "../types/asset.types";
+import { apiFetch } from "../api/fetchInstance";
 
 export const AssetAdministrationPage = () => {
   const { assets, loading, loadAssets, addAsset, removeAsset, editAsset } =
@@ -18,8 +19,7 @@ export const AssetAdministrationPage = () => {
 
     async function loadEmployees() {
       try {
-        const res = await fetch("http://localhost:3000/employees");
-        const data = await res.json();
+        const data = await apiFetch<Employee[]>("/employees");
         setEmployees(data);
       } catch (err) {
         console.error("Failed to fetch employees", err);

@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { apiFetch } from "../api/fetchInstance";
 import { EmployeeForm } from "../components/EmployeeForm";
 import { EmployeeTable } from "../components/EmployeeTable";
 import type { Employee } from "../types/employee.types";
@@ -8,8 +9,7 @@ export const EmployeesPage = () => {
 
   const fetchEmployees = async () => {
     try {
-      const res = await fetch("http://localhost:3000/employees");
-      const data = await res.json();
+      const data = await apiFetch<Employee[]>("/employees");
       setEmployees(data);
     } catch (err) {
       console.error("Failed to fetch employees", err);
@@ -17,17 +17,25 @@ export const EmployeesPage = () => {
   };
 
   useEffect(() => {
+    let isMounted = true;
+
     const loadEmployees = async () => {
       try {
-        const res = await fetch("http://localhost:3000/employees");
-        const data = await res.json();
-        setEmployees(data);
+        const data = await apiFetch<Employee[]>("/employees");
+
+        if (isMounted) {
+          setEmployees(data);
+        }
       } catch (err) {
         console.error("Failed to fetch employees", err);
       }
     };
 
-    loadEmployees();
+    void loadEmployees();
+
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   return (
@@ -41,12 +49,10 @@ export const EmployeesPage = () => {
         </p>
       </div>
 
-      {/* FORM CARD */}
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <EmployeeForm onCreated={fetchEmployees} />
       </div>
 
-      {/* TABLE CARD */}
       <div className="rounded-2xl border border-slate-200 bg-white p-6 shadow-sm">
         <EmployeeTable employees={employees} />
       </div>

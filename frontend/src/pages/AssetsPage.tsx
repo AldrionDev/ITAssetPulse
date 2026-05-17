@@ -4,6 +4,8 @@ import { useAssets } from "../hooks/useAssets";
 import { useAssetFilter } from "../hooks/useAssetFilter";
 import { AssetFilter } from "../components/AssetFilter";
 import { AssetTable } from "../components/AssetTable";
+import { apiFetch } from "../api/fetchInstance";
+
 
 const AssetsPage = () => {
   const { assets, loading, loadAssets, removeAsset, editAsset } = useAssets();
@@ -27,8 +29,7 @@ const AssetsPage = () => {
 
     async function loadEmployees() {
       try {
-        const res = await fetch("http://localhost:3000/employees");
-        const data = await res.json();
+        const data = await apiFetch<Employee[]>("/employees")
         setEmployees(data);
       } catch (err) {
         console.error("Failed to fetch employees", err);

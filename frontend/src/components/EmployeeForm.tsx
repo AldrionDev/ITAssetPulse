@@ -1,4 +1,6 @@
 import { useState } from "react";
+import { apiFetch } from "../api/fetchInstance";
+import type { Employee } from "../types/employee.types";
 
 export const EmployeeForm = ({ onCreated }: { onCreated: () => void }) => {
   const [name, setName] = useState("");
@@ -9,19 +11,21 @@ export const EmployeeForm = ({ onCreated }: { onCreated: () => void }) => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    await fetch("http://localhost:3000/employees", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ name, department, email, position }),
-    });
-    setName("");
-    setDepartment("");
-    setEmail("");
-    setPosition("");
+    try {
+      await apiFetch<Employee>("/employees", {
+        method: "POST",
+        body: { name, department, email, position },
+      });
 
-    onCreated();
+      setName("");
+      setDepartment("");
+      setEmail("");
+      setPosition("");
+
+      onCreated();
+    } catch (err) {
+      console.error("Failed to create employee", err);
+    }
   };
 
   return (

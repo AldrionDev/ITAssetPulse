@@ -77,16 +77,28 @@ variable "kubernetes_namespace" {
 }
 
 variable "mongodb_uri" {
-  description = "MongoDB connection string used bz the backend application"
+  description = "MongoDB connection string used by the backend application"
   type        = string
   sensitive   = true
 }
 
 variable "jwt_secret" {
-  description = "JWT secret used bz the backend application"
+  description = "JWT secret used by the backend application"
   type        = string
   sensitive   = true
 }
+
+variable "mongodb_atlas_srv_host" {
+  description = "MongoDB Atlas SRV host without protocol, username, or password."
+  type        = string
+}
+
+variable "mongodb_atlas_app_name" {
+  description = "MongoDB Atlas appName query parameter."
+  type        = string
+  default     = "itassetpulse-demo"
+}
+
 
 variable "atlas_public_key" {
   description = "MongoDB Atlas public API key."
