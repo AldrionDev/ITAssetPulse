@@ -16,5 +16,10 @@ terraform {
       source  = "hashicorp/helm"
       version = "~> 3.0"
     }
+
+    mongodbatlas = {
+      source  = "mongodb/mongodbatlas"
+      version = "~> 2.12"
+    }
   }
 }
