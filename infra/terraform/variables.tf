@@ -88,3 +88,19 @@ variable "jwt_secret" {
   sensitive   = true
 }
 
+variable "atlas_public_key" {
+  description = "MongoDB Atlas public API key."
+  type        = string
+  sensitive   = true
+}
+
+variable "atlas_private_key" {
+  description = "MongoDB Atlas private API key."
+  type        = string
+  sensitive   = true
+}
+
+variable "atlas_project_id" {
+  description = "Existing MongoDB Atlas project ID used by this demo"
+  type = string
+}

@@ -31,3 +31,11 @@ private_subnet_cidrs = [
 
 mongodb_uri = "mongodb+srv://username:password@example.mongodb.net/itassetpulse?retryWrites=true&w=majority"
 jwt_secret  = "replace-with-a-long-random-local-demo-secret"
+
+# MongoDB Atlas provider
+# Do not put real Atlas API keys in this example file.
+# Copy this file to terraform.tfvars and set real values locally.
+
+atlas_public_key  = "replace-with-your-atlas-public-api-key"
+atlas_private_key = "replace-with-your-atlas-private-api-key"
+atlas_project_id  = "replace-with-your-existing-atlas-project-id"
