@@ -102,5 +102,23 @@ variable "atlas_private_key" {
 
 variable "atlas_project_id" {
   description = "Existing MongoDB Atlas project ID used by this demo"
-  type = string
+  type        = string
+}
+
+variable "atlas_database_username" {
+  description = "MongoDB Atlas database username used by the backend application."
+  type        = string
+  default     = "itassetpulse_user"
+}
+
+variable "atlas_database_password" {
+  description = "MongoDB Atlas database password used by the backend application."
+  type        = string
+  sensitive   = true
+}
+
+variable "mongodb_database_name" {
+  description = "MongoDB database name used by the backend application."
+  type        = string
+  default     = "itassetpulse"
 }
