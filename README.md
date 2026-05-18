@@ -1,191 +1,70 @@
 # IT Asset Pulse
 
-> Full-stack IT Asset Management (ITAM) application  
-> Built with NestJS, React, MongoDB, and Docker  
-> Evolving into a cloud-native DevOps project (AWS, EKS, Terraform)
+> Full-stack IT Asset Management demo application extended into a cloud-native DevOps portfolio project.  
+> Built with NestJS, React, MongoDB Atlas, Docker, AWS EKS, ECR, and Terraform.
 
 ---
 
 ## Overview
 
-IT Asset Pulse is a full-stack application that simulates a real-world IT asset management system.
+IT Asset Pulse is a demo IT Asset Management application designed to showcase both full-stack development and DevOps/cloud engineering skills.
 
-The project demonstrates:
+The project started as a NestJS + React application and was extended with a real AWS-based deployment workflow using Terraform, Docker, ECR, EKS, Kubernetes, AWS Load Balancer Controller, and MongoDB Atlas.
 
-- Backend API development with NestJS
-- Modern React frontend
-- Role-based access control (RBAC)
-- Docker-based local development
-- Realistic business workflows
+It demonstrates:
+
+- Full-stack application development
+- JWT authentication and role-based access control
+- Dockerized local development
+- Production-style container images
+- Terraform-managed AWS infrastructure
+- Kubernetes deployment on Amazon EKS
+- MongoDB Atlas managed database integration
+- Cost-conscious cloud infrastructure lifecycle
 
 ---
 
 ## Tech Stack
 
-### Backend
+### Application
 
-- NestJS (TypeScript)
-- MongoDB (Mongoose)
-- JWT Authentication
-- Role-based Authorization (RBAC)
+- Backend: NestJS, TypeScript, Mongoose
+- Frontend: React, TypeScript, Vite, Tailwind CSS
+- Database: MongoDB / MongoDB Atlas
+- Authentication: JWT
+- Authorization: Role-based access control
 
-### Frontend
-
-- React (TypeScript)
-- Vite
-- Tailwind CSS
-
-### DevOps (Current)
+### DevOps / Cloud
 
 - Docker
 - Docker Compose
-
-### DevOps (Target Stack)
-
-- AWS ECR (Container Registry)
-- AWS EKS (Kubernetes)
-- MongoDB Atlas (Managed Database)
-- Terraform (Infrastructure as Code)
-- GitHub Actions (CI/CD)
-- AWS IAM (Security & Access)
-- S3 (File storage)
-- Prometheus + Grafana (Monitoring)
+- AWS ECR
+- AWS EKS
+- Kubernetes
+- AWS Application Load Balancer
+- AWS Load Balancer Controller
+- Terraform
+- Terraform remote state in S3
+- MongoDB Atlas Terraform provider
 
 ---
 
 ## Core Features
 
-### Asset Management
-
-- Create, update, delete assets
+- Asset CRUD
 - Asset detail page
-- Search and filtering
-
-### Role-Based Access Control (RBAC)
-
-- Viewer → read-only
-- Manager → update
-- Admin → full access
-
-Backend secured with:
-
-- JWT authentication
-- RolesGuard
-
----
-
-### Dashboard
-
-- Asset statistics
-- Category breakdown
-- Recently added assets
-
----
-
-### Asset History
-
-- Audit log of asset changes
-- Per-asset history tracking
-
----
-
-### QR Code System
-
-- Generate QR codes
-- Scan QR codes to open asset detail page
-
----
-
-### Employee Assignment
-
-- Assign assets to employees
-- Track department and assignment date
-
----
-
-## Architecture
-
-### Current (Local)
-
-```text
-Frontend (React)
-        ↓
-Backend API (NestJS)
-        ↓
-MongoDB (Docker)
-```
-
----
-
-### Target (Cloud / DevOps)
-
-```text
-Users
-  ↓
-Load Balancer / Ingress
-  ↓
-Frontend (EKS)
-  ↓
-Backend API (EKS)
-  ↓
-MongoDB Atlas (Managed DB)
-
-+ AWS ECR (images)
-+ Terraform (infra)
-+ S3 (file storage)
-+ Monitoring stack
-```
-
----
-
-## Local Development
-
-### 1. Clone
-
-```bash
-git clone https://github.com/AldrionDev/ITAssetPulse.git
-cd ITAssetPulse
-```
-
----
-
-### 2. Build
-
-```bash
-docker compose build
-```
-
----
-
-### 3. Run
-
-```bash
-docker compose up -d
-```
-
----
-
-### 4. Seed data
-
-```bash
-docker exec -it asset-backend npm run seed
-```
-
----
-
-### 5. Access
-
-Frontend:
-
-```
-http://localhost:5173
-```
-
-Backend:
-
-```
-http://localhost:3000
-```
+- Asset search and filtering
+- Dashboard with asset statistics
+- Employee management
+- Asset assignment to employees
+- Asset history / audit log
+- QR code generation
+- QR code scanner page
+- JWT login
+- Role-based access control:
+  - Viewer: read-only
+  - Manager: update assets
+  - Admin: full access
 
 ---
 
@@ -199,158 +78,214 @@ http://localhost:3000
 
 ---
 
-## Testing
+## Local Development
 
-- Tested with Thunder Client / Postman
-- Verified:
-  - Authentication (JWT)
-  - Role-based access control
-  - Endpoint protection
+```bash
+git clone https://github.com/AldrionDev/ITAssetPulse.git
+cd ITAssetPulse
+docker compose build
+docker compose up -d
+```
 
-Expected responses:
+Seed demo data:
 
-- 200 / 201 → success
-- 403 → forbidden
-- 401 → unauthorized
+```bash
+docker exec -it asset-backend npm run seed
+```
 
----
-
-## Project Structure
+Local URLs:
 
 ```text
-backend/
-  src/
-    assets/
-    auth/
-    employees/
-    asset-history/
-
-frontend/
-  src/
-    components/
-    pages/
-    hooks/
-
-infra/ (planned)
-  terraform/
-  kubernetes/
+Frontend: http://localhost:5173
+Backend:  http://localhost:3000
 ```
 
 ---
 
-## Roadmap
+## Local Architecture
 
-### ✅ Full-stack (Completed)
-
-- [x] Asset CRUD
-- [x] Asset detail page
-- [x] Dashboard
-- [x] Search & filtering
-- [x] Employee assignment
-- [x] Asset history (audit log)
-- [x] JWT authentication
-- [x] Backend RBAC (RolesGuard)
-- [x] Protected frontend routes
-- [x] QR code system
-- [x] Admin asset page
-- [x] Dockerized setup
+```text
+Browser
+  ↓
+React Frontend
+  ↓
+NestJS Backend API
+  ↓
+MongoDB container
+```
 
 ---
 
-## 🚧 DevOps Roadmap
+## Cloud Architecture
 
-### M5 — Docker & Image Prep ✅ - Completed
+```text
+Browser
+  ↓
+AWS Application Load Balancer
+  ↓
+Kubernetes Ingress
+  ↓
+Frontend Service / nginx
+  ↓
+/api proxy
+  ↓
+Backend Service
+  ↓
+NestJS Backend Pod
+  ↓
+MongoDB Atlas
+```
 
-- Clean Docker Compose setup
-- Add `.env.example`
-- Prepare production-ready images
+Terraform manages the main AWS and Kubernetes infrastructure:
 
----
-
-### M6 — AWS ECR
-
-- Create private ECR repositories
-- Push frontend and backend images
-- Document image workflow
-
----
-
-### M7 — EKS Foundation
-
-- Create EKS cluster
-- Configure node groups
-- Enable multi-AZ high availability
-- Install EKS addons
-
----
-
-### M8 — EKS Deployment
-
-- Create Kubernetes manifests
-- Configure secrets and configs
-- Add ingress and load balancing
-- Deploy application to EKS
-
----
-
-### M9 — Managed Database
-
-- Migrate to MongoDB Atlas
-- Secure database connection
+- VPC
+- Public and private subnets
+- Internet Gateway
+- NAT Gateway
+- ECR repositories
+- EKS cluster
+- EKS managed node group
+- EKS addons
+- AWS Load Balancer Controller
+- Kubernetes namespace
+- Kubernetes deployments and services
+- Kubernetes secrets
+- Kubernetes ingress
+- MongoDB Atlas database user
+- MongoDB Atlas IP access rule
 
 ---
 
-### M10 — IAM & Pod Identity
+## Terraform Infrastructure
 
-- Configure AWS IAM roles
-- Enable pod-level permissions
+Terraform configuration is located in:
+
+```text
+infra/terraform/
+```
+
+Main workflow:
+
+```bash
+cd infra/terraform
+terraform init -backend-config=backend.hcl
+terraform fmt
+terraform validate
+terraform plan
+terraform apply
+```
+
+Terraform remote state is stored in an S3 bucket created by the bootstrap configuration:
+
+```text
+infra/terraform/bootstrap/
+```
+
+Sensitive local files are not committed:
+
+```text
+terraform.tfvars
+backend.hcl
+.env
+.terraform/
+terraform.tfstate
+```
 
 ---
 
-### M11 — S3 Integration
+## MongoDB Atlas Integration
 
-- Create S3 bucket
-- Implement file upload/download
+The cloud deployment uses MongoDB Atlas as a managed database.
+
+Terraform manages:
+
+- MongoDB Atlas provider configuration
+- Existing Atlas project reference
+- Atlas database user
+- Atlas IP access rule for the AWS NAT Gateway public IP
+- Kubernetes backend Secret with `MONGO_URI`
+
+The Atlas project and cluster are intentionally not created by Terraform in this demo to avoid accidentally provisioning paid resources.
 
 ---
 
-### M12 — Terraform
+## Current DevOps Status
 
-- Add Terraform structure
-- Configure remote state (S3 + DynamoDB)
-- Provision infrastructure via code
+Completed:
+
+- Dockerized local development
+- Production-style backend and frontend Docker images
+- Terraform foundation and remote state
+- AWS networking with public/private subnets
+- ECR repositories and image workflow
+- EKS cluster and managed node group
+- EKS addons and AWS Load Balancer Controller
+- Kubernetes application deployment
+- AWS ALB ingress
+- MongoDB Atlas database access managed by Terraform
+- End-to-end cloud deployment verification
+- Cloud cost cleanup workflow with `terraform destroy`
+
+In Progress:
+
+- GitHub Actions CI/CD - In progress
+
+Planned:
+
+- Basic monitoring and automation
+- Final architecture, cost-control, and cleanup documentation
 
 ---
 
-### M13 — Automation & Monitoring
+## Cost Control
 
-- Add backend health endpoint
-- Create Lambda-based health checks
-- Store reports in S3
-- Add monitoring stack
+This project uses real AWS resources.
+
+Resources such as EKS, EC2 worker nodes, NAT Gateway, and Application Load Balancer can create ongoing costs.
+
+Destroy the demo infrastructure when not in use:
+
+```bash
+cd infra/terraform
+terraform destroy
+```
+
+The Terraform remote state S3 bucket is managed separately and should normally remain in place.
+
+---
+
+## Security Notes
+
+Secrets are not committed to Git.
+
+Sensitive values are stored in:
+
+- Local `.env` files for local development
+- Local `terraform.tfvars` for Terraform
+- Kubernetes Secrets for EKS deployment
+- GitHub Secrets for future CI/CD
+
+Terraform remote state must be treated as sensitive because it can contain secret values.
 
 ---
 
 ## Purpose
 
-This project was built to:
+This project demonstrates my transition from full-stack development into DevOps and cloud engineering.
 
-- Practice full-stack development
-- Implement backend security (RBAC)
-- Work with containerized environments
-- Transition into DevOps and cloud engineering
+It shows practical experience with:
 
----
+- Docker
+- AWS
+- Terraform
+- Kubernetes / EKS
+- ECR
+- MongoDB Atlas
+- Infrastructure as Code
+- Cloud deployment troubleshooting
+- Cost-aware infrastructure cleanup
 
-## DevOps Direction
-
-The long-term goal is to transform this application into a **cloud-native system** with:
-
-- Kubernetes-based deployment (EKS)
-- Infrastructure as Code (Terraform)
-- Automated CI/CD pipelines
-- Secure IAM-based access control
-- Monitoring and observability
+The project is intended for portfolio use, DevOps interview preparation, and hands-on cloud learning.
 
 ---
 
