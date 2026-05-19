@@ -2,6 +2,9 @@ name: Deploy
 
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - feature/133-add-github-actions-workflow-to-build-and-push-docker-images-to-ecr
 
 jobs:
   build-and-push-images:
