@@ -12,6 +12,8 @@ data "aws_availability_zones" "available" {
   state = "available"
 }
 
+data "aws_caller_identity" "current" {}
+
 resource "aws_vpc" "main" {
   cidr_block           = var.vpc_cidr
   enable_dns_support   = true
@@ -222,10 +224,34 @@ resource "aws_eks_cluster" "main" {
       aws_subnet.private[*].id
     )
   }
+
+  access_config {
+    authentication_mode                         = "API_AND_CONFIG_MAP"
+    bootstrap_cluster_creator_admin_permissions = true
+  }
+
   depends_on = [aws_iam_role_policy_attachment.eks_cluster_policy]
 
   tags = {
     Name = "${local.name_prefix}-eks"
+  }
+}
+
+# ---------------------- EKS Access for GitHub Actions ----------------------
+
+resource "aws_eks_access_entry" "github_actions" {
+  cluster_name  = aws_eks_cluster.main.name
+  principal_arn = "arn:aws:iam::${data.aws_caller_identity.current.account_id}:user/github-actions-itassetpulse"
+  type          = "STANDARD"
+}
+
+resource "aws_eks_access_policy_association" "github_actions_cluster_admin" {
+  cluster_name  = aws_eks_cluster.main.name
+  principal_arn = aws_eks_access_entry.github_actions.principal_arn
+  policy_arn    = "arn:aws:eks::aws:cluster-access-policy/AmazonEKSClusterAdminPolicy"
+
+  access_scope {
+    type = "cluster"
   }
 }
 
