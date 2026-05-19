@@ -125,7 +125,7 @@ resource "aws_route_table_association" "private" {
 resource "aws_ecr_repository" "backend" {
   name                 = "${local.name_prefix}-backend-ecr"
   image_tag_mutability = "MUTABLE"
-  force_delete = true
+  force_delete         = true
 
   image_scanning_configuration {
     scan_on_push = true
@@ -135,8 +135,8 @@ resource "aws_ecr_repository" "backend" {
 resource "aws_ecr_repository" "frontend" {
   name                 = "${local.name_prefix}-frontend-ecr"
   image_tag_mutability = "MUTABLE"
-  force_delete = true
-  
+  force_delete         = true
+
   image_scanning_configuration {
     scan_on_push = true
   }
@@ -547,6 +547,11 @@ resource "kubernetes_secret" "backend" {
   }
 
   type = "Opaque"
+
+  depends_on = [
+    mongodbatlas_database_user.backend,
+    mongodbatlas_project_ip_access_list.eks_nat_gateway
+  ]
 }
 
 # ---------------------- Backend Application Deployment --------------------------------------------------------
