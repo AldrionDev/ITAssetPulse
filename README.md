@@ -209,6 +209,20 @@ The Atlas project and cluster are intentionally not created by Terraform in this
 
 ---
 
+## CI/CD
+
+This project includes a simple GitHub Actions based CI/CD workflow.
+
+The CI workflow validates backend and frontend builds.
+
+The deploy workflow builds Docker images, pushes them to Amazon ECR, and restarts the existing Kubernetes deployments in EKS.
+
+More details:
+
+```text
+docs/ci-cd.md
+```
+
 ## Current DevOps Status
 
 Completed:
@@ -225,14 +239,14 @@ Completed:
 - MongoDB Atlas database access managed by Terraform
 - End-to-end cloud deployment verification
 - Cloud cost cleanup workflow with `terraform destroy`
+- GitHub Actions CI/CD - In progress
 
 In Progress:
 
-- GitHub Actions CI/CD - In progress
+- Basic monitoring and automation - in progress
 
 Planned:
 
-- Basic monitoring and automation
 - Final architecture, cost-control, and cleanup documentation
 
 ---
