@@ -9,7 +9,7 @@ export class AuthService {
     private configService: ConfigService,
   ) {}
 
-  async login(username: string, password: string) {
+  login(username: string, password: string) {
     // For demo purposes, demoUsers is hardcoded. In production, use a database.
     const demoUsers = [
       { username: 'admin', password: 'secret123', role: 'admin' },

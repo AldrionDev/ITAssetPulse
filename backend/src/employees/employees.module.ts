@@ -4,7 +4,6 @@ import { Employee, EmployeeSchema } from './schemas/employee.schema';
 import { EmployeesService } from './employees.service';
 import { EmployeesController } from './employees.controller';
 
-
 @Module({
   imports: [
     MongooseModule.forFeature([

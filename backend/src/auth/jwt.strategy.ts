@@ -4,6 +4,13 @@ import { Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { getJwtSecret } from './jwt-secret';
 
+/** Shape Passport attaches to `request.user` after a token is verified. */
+export interface AuthenticatedUser {
+  userId: string;
+  username: string;
+  role: string;
+}
+
 @Injectable()
 export class JwtStrategy extends PassportStrategy(Strategy) {
   constructor(configService: ConfigService) {
@@ -14,7 +21,11 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
     });
   }
 
-  validate(payload: { sub: string; username: string; role: string }) {
+  validate(payload: {
+    sub: string;
+    username: string;
+    role: string;
+  }): AuthenticatedUser {
     return {
       userId: payload.sub,
       username: payload.username,

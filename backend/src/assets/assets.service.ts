@@ -20,8 +20,9 @@ export class AssetsService {
   async create(dto: CreateAssetDto): Promise<Asset> {
     try {
       return await new this.assetModel(dto).save();
-    } catch (error: any) {
-      if (error.code === 11000) {
+    } catch (error) {
+      // MongoDB duplicate key error on the unique serialNumber index.
+      if ((error as { code?: number }).code === 11000) {
         throw new ConflictException('Serial number already exists');
       }
       throw error;
