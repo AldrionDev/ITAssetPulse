@@ -157,5 +157,10 @@ override.tf.json
 # Terraform backend local config
 backend.hcl
 
-terraform-state-backup-before-backend-fix.json
-terraform-state-backup-before-frontend-fix.json
+# Local Terraform artifacts that can contain secrets.
+# Match by pattern, not by file name: a manually saved state copy or plan file
+# holds MONGO_URI, JWT_SECRET and the Atlas credentials in plain text.
+terraform-state-backup-*.json
+*-outputs.txt
+*.tfplan
+tfplan
