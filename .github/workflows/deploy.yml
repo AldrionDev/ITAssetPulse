@@ -6,10 +6,22 @@ on:
     branches:
       - main
 
+# Queue overlapping deploys instead of racing them. Never cancel a run in
+# progress: it could be halfway through a rollout.
+concurrency:
+  group: deploy-${{ github.ref }}
+  cancel-in-progress: false
+
 jobs:
+  ci:
+    name: CI
+    uses: ./.github/workflows/ci.yml
+
   build-and-push-images:
     name: Build and push Docker images
     runs-on: ubuntu-latest
+    # Nothing reaches ECR or the cluster unless lint, tests and both builds pass.
+    needs: ci
 
     steps:
       - name: Checkout repository

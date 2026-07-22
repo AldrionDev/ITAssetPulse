@@ -10,8 +10,8 @@ The goal of this setup is to keep the deployment process simple, understandable,
 
 GitHub Actions is used for:
 
-- Backend build validation
-- Frontend build validation
+- Backend lint, unit tests and build validation
+- Frontend lint and build validation
 - Docker image build
 - Docker image push to Amazon ECR
 - Restarting existing Kubernetes deployments in EKS
@@ -54,23 +54,29 @@ File:
 
 Purpose:
 
-The CI workflow validates that both the backend and frontend can be built successfully.
+The CI workflow validates that both the backend and frontend are lint-clean, that the backend unit tests pass, and that both build successfully.
 
 It runs on:
 
 * Pull requests
 * Pushes to the main branch
+* Calls from the deploy workflow, which uses it as its gate
 
-Main steps:
+Main steps, in two parallel jobs:
 
 ```text
-Checkout repository
-Setup Node.js
-Install backend dependencies
-Build backend
-Install frontend dependencies
-Build frontend
+Backend checks               Frontend checks
+Checkout repository          Checkout repository
+Setup Node.js                Setup Node.js
+npm ci                       npm ci
+npm run lint:check           npm run lint
+npm test                     npm run build
+npm run build
 ```
+
+Dependencies are installed with `npm ci` rather than `npm install`, so the workflow uses exactly the versions in `package-lock.json`.
+
+The backend uses a separate `lint:check` script because `npm run lint` runs ESLint with `--fix`, which would rewrite files and report success instead of failing.
 
 The CI workflow does not connect to AWS and does not deploy the application.
 
@@ -88,9 +94,23 @@ Purpose:
 
 The deploy workflow builds Docker images, pushes them to Amazon ECR, and restarts the existing Kubernetes deployments in EKS.
 
+It first runs the CI workflow and stops if anything fails, so nothing reaches ECR or the cluster unless lint, the unit tests and both builds pass:
+
+```yaml
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  build-and-push-images:
+    needs: ci
+```
+
+Overlapping deploys are queued rather than run in parallel, through a `concurrency` group. A run already in progress is never cancelled, because it may be halfway through a rollout.
+
 Main steps:
 
 ```text
+Run the CI workflow (gate)
 Checkout repository
 Configure AWS credentials
 Login to Amazon ECR
@@ -574,6 +594,5 @@ Possible future improvements:
 * Use Git commit SHA image tags
 * Add image tag outputs to deployment logs
 * Add namespace-scoped Kubernetes permissions instead of cluster admin access
-* Add tests to the CI workflow
-* Add lint checks to the CI workflow
+* Add frontend component tests, which the CI workflow does not run yet
 * Add a monitoring/observability milestone
