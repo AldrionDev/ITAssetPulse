@@ -13,6 +13,7 @@ import {
 import { AuthGuard } from '@nestjs/passport';
 import { AssetsService } from './assets.service';
 import { CreateAssetDto } from './dto/create-asset.dto';
+import { UpdateAssetDto } from './dto/update-asset.dto';
 import { Roles } from '../auth/roles.decorator';
 import { RolesGuard } from '../auth/roles.guard';
 
@@ -26,14 +27,13 @@ export class AssetsController {
   create(@Body() dto: CreateAssetDto) {
     return this.assetsService.create(dto);
   }
-  
+
   @Roles('admin', 'manager', 'viewer')
   @Get()
   findAll() {
     return this.assetsService.findAll();
   }
 
-  
   @Roles('admin', 'manager', 'viewer')
   @Get(':id')
   findOne(@Param('id') id: string) {
@@ -42,11 +42,10 @@ export class AssetsController {
 
   @Roles('admin', 'manager')
   @Patch(':id')
-  update(@Param('id') id: string, @Body() data: Partial<CreateAssetDto>) {
-    return this.assetsService.update(id, data);
+  update(@Param('id') id: string, @Body() dto: UpdateAssetDto) {
+    return this.assetsService.update(id, dto);
   }
 
-  
   @Roles('admin')
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)

@@ -55,7 +55,9 @@ describe('EmployeesController (authorization)', () => {
 
     app = moduleRef.createNestApplication();
     // Mirrors the global pipe configured in main.ts.
-    app.useGlobalPipes(new ValidationPipe());
+    app.useGlobalPipes(
+      new ValidationPipe({ whitelist: true, forbidNonWhitelisted: true }),
+    );
     await app.init();
 
     jwtService = moduleRef.get(JwtService);

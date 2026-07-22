@@ -7,6 +7,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { Model } from 'mongoose';
 import { Asset, AssetDocument } from './schemas/asset.schema';
 import { CreateAssetDto } from './dto/create-asset.dto';
+import { UpdateAssetDto } from './dto/update-asset.dto';
 import { AssetHistoryService } from '../asset-history/asset-history.service';
 
 @Injectable()
@@ -41,7 +42,7 @@ export class AssetsService {
     return asset;
   }
 
-  async update(id: string, data: Partial<CreateAssetDto>): Promise<Asset> {
+  async update(id: string, data: UpdateAssetDto): Promise<Asset> {
     const oldAsset = await this.assetModel.findById(id).exec();
 
     if (!oldAsset) {
