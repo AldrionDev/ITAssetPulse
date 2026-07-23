@@ -70,6 +70,8 @@ It demonstrates:
 
 ## Demo Users
 
+Local demo credentials, built into the authentication implementation (not created by the seed command) and **not production credentials**:
+
 | Role    | Username | Password   |
 | ------- | -------- | ---------- |
 | Admin   | admin    | secret123  |
@@ -83,11 +85,17 @@ It demonstrates:
 ```bash
 git clone https://github.com/AldrionDev/ITAssetPulse.git
 cd ITAssetPulse
+cp .env.example .env
+```
+
+Review and update the values in `.env` before starting the stack.
+
+```bash
 docker compose build
 docker compose up -d
 ```
 
-Seed demo data:
+Seed demo data (assets and employees only — the demo login accounts above are already built in):
 
 ```bash
 docker exec -it asset-backend npm run seed
@@ -116,7 +124,9 @@ MongoDB container
 
 ---
 
-## Cloud Architecture
+## Cloud Architecture (Previously Implemented)
+
+This diagram describes the AWS/Kubernetes architecture built earlier in this project. It is not a currently verified live environment — see [Infrastructure Status](#infrastructure-status) below.
 
 ```text
 Browser
@@ -136,135 +146,55 @@ NestJS Backend Pod
 MongoDB Atlas
 ```
 
-Terraform manages the main AWS and Kubernetes infrastructure:
-
-- VPC
-- Public and private subnets
-- Internet Gateway
-- NAT Gateway
-- ECR repositories
-- EKS cluster
-- EKS managed node group
-- EKS addons
-- AWS Load Balancer Controller
-- Kubernetes namespace
-- Kubernetes deployments and services
-- Kubernetes secrets
-- Kubernetes ingress
-- MongoDB Atlas database user
-- MongoDB Atlas IP access rule
+Full resource-level documentation of this architecture (VPC, EKS, ECR, Kubernetes workloads, MongoDB Atlas integration) lives in `infra/terraform/README.md`.
 
 ---
 
-## Terraform Infrastructure
+## Infrastructure Status
 
-Terraform configuration is located in:
+This project previously included a Terraform-managed AWS deployment (VPC, EKS cluster and node group, ECR, AWS Load Balancer Controller, Kubernetes workloads) and a MongoDB Atlas integration. `infra/terraform/README.md` documents what was built — treat it as a record of previously implemented infrastructure; it will need to be updated as part of an upcoming infrastructure review and redesign.
 
-```text
-infra/terraform/
-```
+**Current status:**
 
-Main workflow:
+- The Terraform remote-state S3 bucket that previously tracked this infrastructure has been deleted.
+- The AWS infrastructure is currently being reviewed and redesigned.
+- Without reconciled state, `terraform plan` may not correctly represent Terraform's ownership and mapping of existing AWS resources.
 
-```bash
-cd infra/terraform
-terraform init -backend-config=backend.hcl
-terraform fmt
-terraform validate
-terraform plan
-terraform apply
-```
-
-Terraform remote state is stored in an S3 bucket created by the bootstrap configuration:
-
-```text
-infra/terraform/bootstrap/
-```
-
-Sensitive local files are not committed:
-
-```text
-terraform.tfvars
-backend.hcl
-.env
-.terraform/
-terraform.tfstate
-```
-
----
-
-## MongoDB Atlas Integration
-
-The cloud deployment uses MongoDB Atlas as a managed database.
-
-Terraform manages:
-
-- MongoDB Atlas provider configuration
-- Existing Atlas project reference
-- Atlas database user
-- Atlas IP access rule for the AWS NAT Gateway public IP
-- Kubernetes backend Secret with `MONGO_URI`
-
-The Atlas project and cluster are intentionally not created by Terraform in this demo to avoid accidentally provisioning paid resources.
+This README intentionally does not include Terraform `apply`, `destroy`, or deployment instructions. See `infra/terraform/README.md` for infrastructure work once the redesign is underway.
 
 ---
 
 ## CI/CD
 
-This project includes a simple GitHub Actions based CI/CD workflow.
+This project uses GitHub Actions for CI and deployment:
 
-The CI workflow validates backend and frontend builds.
+- The CI workflow validates that the backend and frontend build successfully on pull requests and on pushes to `main`.
+- The deploy workflow builds Docker images, pushes them to Amazon ECR, and restarts the existing Kubernetes deployments in EKS.
 
-The deploy workflow builds Docker images, pushes them to Amazon ECR, and restarts the existing Kubernetes deployments in EKS.
-
-More details:
-
-```text
-docs/ci-cd.md
-```
-
-## Current DevOps Status
-
-Completed:
-
-- Dockerized local development
-- Production-style backend and frontend Docker images
-- Terraform foundation and remote state
-- AWS networking with public/private subnets
-- ECR repositories and image workflow
-- EKS cluster and managed node group
-- EKS addons and AWS Load Balancer Controller
-- Kubernetes application deployment
-- AWS ALB ingress
-- MongoDB Atlas database access managed by Terraform
-- End-to-end cloud deployment verification
-- Cloud cost cleanup workflow with `terraform destroy`
-- GitHub Actions CI/CD - In progress
-
-In Progress:
-
-- Basic monitoring and automation - in progress
-
-Planned:
-
-- Final architecture, cost-control, and cleanup documentation
+The deploy workflow's target AWS/EKS environment is not currently verified as live — see [Infrastructure Status](#infrastructure-status) above. Full details: `docs/ci-cd.md`.
 
 ---
 
-## Cost Control
+## Project Status
 
-This project uses real AWS resources.
+**Application** (current, stable):
 
-Resources such as EKS, EC2 worker nodes, NAT Gateway, and Application Load Balancer can create ongoing costs.
+- Dockerized local development
+- Production-style backend and frontend Docker images
+- JWT authentication and role-based access control
+- GitHub Actions CI (build validation) and deploy workflow (ECR + EKS rollout)
 
-Destroy the demo infrastructure when not in use:
+**Infrastructure** (previously implemented, pending redesign — see [Infrastructure Status](#infrastructure-status)):
 
-```bash
-cd infra/terraform
-terraform destroy
-```
+- Terraform-managed AWS networking, ECR, EKS cluster and node group, EKS addons, AWS Load Balancer Controller
+- Kubernetes application deployment and ALB ingress
+- MongoDB Atlas database access managed by Terraform
 
-The Terraform remote state S3 bucket is managed separately and should normally remain in place.
+**Planned:**
+
+- AWS infrastructure review and redesign
+- Updated Terraform documentation
+- Basic monitoring and automation
 
 ---
 
@@ -277,7 +207,7 @@ Sensitive values are stored in:
 - Local `.env` files for local development
 - Local `terraform.tfvars` for Terraform
 - Kubernetes Secrets for EKS deployment
-- GitHub Secrets for future CI/CD
+- GitHub Secrets for CI/CD deployment credentials
 
 Terraform remote state must be treated as sensitive because it can contain secret values.
 
