@@ -1,4 +1,4 @@
 # bootstrap — environment-agnostic inputs.
-# Copy to terraform.tfvars (git-ignored) and set real values. Implemented in #172.
+# Copy to terraform.tfvars (git-ignored) and set real values.
 project_name = "itassetpulse"
 aws_region   = "eu-north-1" # example — confirm per spec §16
