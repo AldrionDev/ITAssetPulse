@@ -146,13 +146,13 @@ NestJS Backend Pod
 MongoDB Atlas
 ```
 
-Full resource-level documentation of this architecture (VPC, EKS, ECR, Kubernetes workloads, MongoDB Atlas integration) lives in `infra/terraform/README.md`.
+Full resource-level documentation of that earlier architecture (VPC, EKS, ECR, Kubernetes workloads, MongoDB Atlas integration) is preserved in the pre-modularization baseline tag `infra-v1-pre-modularization` (e.g. `git show infra-v1-pre-modularization:infra/terraform/README.md`).
 
 ---
 
 ## Infrastructure Status
 
-This project previously included a Terraform-managed AWS deployment (VPC, EKS cluster and node group, ECR, AWS Load Balancer Controller, Kubernetes workloads) and a MongoDB Atlas integration. `infra/terraform/README.md` documents what was built — treat it as a record of previously implemented infrastructure; it will need to be updated as part of an upcoming infrastructure review and redesign.
+This project previously included a Terraform-managed AWS deployment (VPC, EKS cluster and node group, ECR, AWS Load Balancer Controller, Kubernetes workloads) and a MongoDB Atlas integration. That earlier setup is preserved in the baseline tag `infra-v1-pre-modularization`; the infrastructure is now being rebuilt as a modular ECS Fargate design — see [`docs/infrastructure-modularization-spec.md`](docs/infrastructure-modularization-spec.md) and `infra/terraform/README.md`.
 
 **Current status:**
 

@@ -1,0 +1,15 @@
+# foundation (demo) — copy to foundation.tfvars (git-ignored) and set values.
+# Re-evaluate concrete values per spec §16; the ones below are illustrative examples. Implemented in #174.
+project_name            = "itassetpulse"
+environment             = "demo"
+aws_region              = "eu-north-1" # example — confirm per spec §16
+
+vpc_cidr                = "10.0.0.0/16"                     # example
+public_subnet_cidrs     = ["10.0.1.0/24", "10.0.2.0/24"]    # example
+private_subnet_cidrs    = ["10.0.11.0/24", "10.0.12.0/24"]  # example
+availability_zone_count = 2
+
+# ECR
+scan_on_push         = true
+lifecycle_keep_count = 5
+force_delete         = true

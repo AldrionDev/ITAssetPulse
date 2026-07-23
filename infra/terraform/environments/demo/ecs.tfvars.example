@@ -1,0 +1,18 @@
+# ecs (demo) — copy to ecs.tfvars (git-ignored) and set values. Implemented in #180 / #181.
+project_name = "itassetpulse"
+environment  = "demo"
+aws_region   = "eu-north-1" # example — confirm per spec §16
+
+# Full Git commit SHA of the images published by publish-images.yml (spec §10.2):
+release_sha  = "<git-commit-sha>"
+
+# Fargate sizing (examples)
+frontend_cpu    = 256
+frontend_memory = 512
+backend_cpu     = 256
+backend_memory  = 512
+
+log_retention_days = 7
+
+# Alarm thresholds (examples)
+alb_5xx_threshold = 5
