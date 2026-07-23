@@ -58,6 +58,7 @@ services:
       - "5173:80"
     environment:
       - VITE_API_URL=${VITE_API_URL:-http://localhost:3000}
+      - BACKEND_UPSTREAM_HOST=backend
     networks:
       - asset-network
     depends_on:
