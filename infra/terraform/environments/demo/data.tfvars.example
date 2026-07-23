@@ -1,0 +1,11 @@
+# data (demo) — copy to data.tfvars (git-ignored) and set values. Implemented in #175.
+# Atlas API keys are NOT set here — they come from the provider environment variables
+# MONGODB_ATLAS_PUBLIC_KEY / MONGODB_ATLAS_PRIVATE_KEY (spec §4.4, §9).
+project_name            = "itassetpulse"
+environment             = "demo"
+
+atlas_project_id        = "<your-atlas-project-id>"   # replace (account-specific)
+mongodb_atlas_srv_host  = "<your-cluster>.mongodb.net" # replace
+mongodb_atlas_app_name  = "itassetpulse-demo"
+atlas_database_username = "itassetpulse_user"
+mongodb_database_name   = "itassetpulse"
