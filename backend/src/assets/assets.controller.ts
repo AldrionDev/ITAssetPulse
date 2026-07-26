@@ -26,14 +26,13 @@ export class AssetsController {
   create(@Body() dto: CreateAssetDto) {
     return this.assetsService.create(dto);
   }
-  
+
   @Roles('admin', 'manager', 'viewer')
   @Get()
   findAll() {
     return this.assetsService.findAll();
   }
 
-  
   @Roles('admin', 'manager', 'viewer')
   @Get(':id')
   findOne(@Param('id') id: string) {
@@ -46,7 +45,6 @@ export class AssetsController {
     return this.assetsService.update(id, data);
   }
 
-  
   @Roles('admin')
   @Delete(':id')
   @HttpCode(HttpStatus.NO_CONTENT)

@@ -65,6 +65,28 @@ terraform apply -var-file=../environments/demo/<stack>.tfvars
 
 Apply / dependency order: `bootstrap → account → foundation → data → (publish images) → ecs`. See spec §13.
 
+## CI validation
+
+`.github/workflows/ci.yml` runs AWS-free quality gates on every pull request and push to `main` — no AWS
+credentials are ever configured in CI. Each currently-implemented root stack has its own job running
+`terraform fmt -check -recursive`, `terraform init -backend=false -lockfile=readonly`, and `terraform
+validate`:
+
+| Stack / module | CI job |
+|----------------|--------|
+| `bootstrap` | `terraform-bootstrap-validate` |
+| `account` | `terraform-account-validate` |
+| `foundation` (+ `modules/network`, `modules/ecr-repository`, fmt-checked directly) | `terraform-foundation-validate` |
+| `data` | `terraform-data-validate` |
+| `ecs`, `modules/ecs-fargate-service` | none yet — no `.tf` until #179/#180 |
+
+`modules/network` and `modules/ecr-repository` are fmt-checked directly but not validated standalone — a
+module's `terraform validate` is exercised through the root stack that consumes it (`foundation`).
+
+**Ownership rule (Definition of Done for every later Terraform issue):** any issue that adds or changes a
+root stack or module must add or update its `fmt -check` + `init -backend=false` + `validate` job in the
+same PR. This is part of that issue's Definition of Done, not a follow-up task.
+
 ## Implementation map — milestone "Modular ECS Fargate Infrastructure v1"
 
 | Component | Issue |

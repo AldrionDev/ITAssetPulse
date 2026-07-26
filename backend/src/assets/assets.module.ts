@@ -11,6 +11,6 @@ import { AssetHistoryModule } from '../asset-history/asset-history.module';
     AssetHistoryModule,
   ],
   controllers: [AssetsController],
-  providers: [AssetsService]
+  providers: [AssetsService],
 })
 export class AssetsModule {}
