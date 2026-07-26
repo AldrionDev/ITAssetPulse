@@ -21,9 +21,17 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
+          cache-dependency-path: backend/package-lock.json
 
       - name: Install backend dependencies
-        run: npm install
+        run: npm ci
+
+      - name: Lint backend
+        run: npm run lint:check
+
+      - name: Test backend
+        run: npm test -- --passWithNoTests
 
       - name: Build backend
         run: npm run build
@@ -43,12 +51,63 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
 
       - name: Install frontend dependencies
-        run: npm install
+        run: npm ci
+
+      - name: Lint frontend
+        run: npm run lint
 
       - name: Build frontend
         run: npm run build
+
+  terraform-bootstrap-validate:
+    name: Terraform bootstrap validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.10.0"
+          terraform_wrapper: false
+
+      - name: Terraform fmt check (bootstrap)
+        run: terraform fmt -check -recursive infra/terraform/bootstrap
+
+      - name: Terraform init (bootstrap, no backend)
+        run: terraform -chdir=infra/terraform/bootstrap init -backend=false -lockfile=readonly
+
+      - name: Terraform validate (bootstrap)
+        run: terraform -chdir=infra/terraform/bootstrap validate
+
+  terraform-account-validate:
+    name: Terraform account validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.10.0"
+          terraform_wrapper: false
+
+      - name: Terraform fmt check (account)
+        run: terraform fmt -check -recursive infra/terraform/account
+
+      - name: Terraform init (account, no backend)
+        run: terraform -chdir=infra/terraform/account init -backend=false -lockfile=readonly
+
+      - name: Terraform validate (account)
+        run: terraform -chdir=infra/terraform/account validate
 
   terraform-foundation-validate:
     name: Terraform foundation validate
