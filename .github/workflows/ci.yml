@@ -78,3 +78,26 @@ jobs:
 
       - name: Terraform validate (foundation)
         run: terraform -chdir=infra/terraform/foundation validate
+
+  terraform-data-validate:
+    name: Terraform data validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.10.0"
+          terraform_wrapper: false
+
+      - name: Terraform fmt check (data)
+        run: terraform fmt -check -recursive infra/terraform/data
+
+      - name: Terraform init (data, no backend)
+        run: terraform -chdir=infra/terraform/data init -backend=false -lockfile=readonly
+
+      - name: Terraform validate (data)
+        run: terraform -chdir=infra/terraform/data validate
