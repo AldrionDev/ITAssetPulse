@@ -19,8 +19,13 @@ export class AssetsService {
   async create(dto: CreateAssetDto): Promise<Asset> {
     try {
       return await new this.assetModel(dto).save();
-    } catch (error: any) {
-      if (error.code === 11000) {
+    } catch (error: unknown) {
+      if (
+        typeof error === 'object' &&
+        error !== null &&
+        'code' in error &&
+        error.code === 11000
+      ) {
         throw new ConflictException('Serial number already exists');
       }
       throw error;
