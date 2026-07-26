@@ -49,3 +49,32 @@ jobs:
 
       - name: Build frontend
         run: npm run build
+
+  terraform-foundation-validate:
+    name: Terraform foundation validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.10.0"
+          terraform_wrapper: false
+
+      - name: Terraform fmt check (foundation)
+        run: terraform fmt -check -recursive infra/terraform/foundation
+
+      - name: Terraform fmt check (modules/network)
+        run: terraform fmt -check -recursive infra/terraform/modules/network
+
+      - name: Terraform fmt check (modules/ecr-repository)
+        run: terraform fmt -check -recursive infra/terraform/modules/ecr-repository
+
+      - name: Terraform init (foundation, no backend)
+        run: terraform -chdir=infra/terraform/foundation init -backend=false -lockfile=readonly
+
+      - name: Terraform validate (foundation)
+        run: terraform -chdir=infra/terraform/foundation validate
