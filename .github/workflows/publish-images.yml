@@ -1,0 +1,163 @@
+name: Publish images
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Git ref or commit SHA to publish
+        required: true
+        default: main
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  publish:
+    name: Publish backend and frontend images to ECR
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Preflight - required repository variables and dispatch branch
+        run: |
+          set -euo pipefail
+
+          missing=()
+          [ -z "${{ vars.AWS_IMAGE_PUBLISH_ROLE_ARN }}" ] && missing+=("AWS_IMAGE_PUBLISH_ROLE_ARN")
+          [ -z "${{ vars.AWS_REGION }}" ] && missing+=("AWS_REGION")
+          [ -z "${{ vars.PROJECT_NAME }}" ] && missing+=("PROJECT_NAME")
+          [ -z "${{ vars.ENVIRONMENT }}" ] && missing+=("ENVIRONMENT")
+
+          if [ "${#missing[@]}" -gt 0 ]; then
+            for name in "${missing[@]}"; do
+              echo "::error::Missing required repository variable: ${name}"
+            done
+            exit 1
+          fi
+
+          if [ "${GITHUB_REF}" != "refs/heads/main" ]; then
+            echo "::error::This workflow can only be dispatched against the main branch (got ${GITHUB_REF})."
+            exit 1
+          fi
+
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ inputs.ref }}
+          fetch-depth: 0
+
+      - name: Resolve full SHA and verify main ancestry
+        id: resolve-sha
+        run: |
+          set -euo pipefail
+
+          full_sha="$(git rev-parse HEAD)"
+          echo "sha=${full_sha}" >> "$GITHUB_OUTPUT"
+          echo "Resolved full commit SHA: ${full_sha}" >> "$GITHUB_STEP_SUMMARY"
+
+          git fetch origin main
+          if ! git merge-base --is-ancestor "${full_sha}" origin/main; then
+            echo "::error::Commit ${full_sha} is not part of origin/main's history. Refusing to publish."
+            exit 1
+          fi
+
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v6
+        with:
+          role-to-assume: ${{ vars.AWS_IMAGE_PUBLISH_ROLE_ARN }}
+          aws-region: ${{ vars.AWS_REGION }}
+
+      - name: Resolve repository URIs
+        id: repos
+        run: |
+          set -euo pipefail
+
+          account_id="$(aws sts get-caller-identity --query Account --output text)"
+          registry="${account_id}.dkr.ecr.${{ vars.AWS_REGION }}.amazonaws.com"
+          prefix="${{ vars.PROJECT_NAME }}-${{ vars.ENVIRONMENT }}"
+
+          {
+            echo "registry=${registry}"
+            echo "backend_repo=${prefix}-backend"
+            echo "frontend_repo=${prefix}-frontend"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: Check existing backend image
+        id: check-backend
+        run: |
+          set -euo pipefail
+
+          sha="${{ steps.resolve-sha.outputs.sha }}"
+          repo="${{ steps.repos.outputs.backend_repo }}"
+
+          if output=$(aws ecr describe-images --repository-name "${repo}" --image-ids "imageTag=${sha}" 2>&1); then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          elif echo "${output}" | grep -q "ImageNotFoundException"; then
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::Unexpected ECR error while checking ${repo}:${sha}: ${output}"
+            exit 1
+          fi
+
+      - name: Check existing frontend image
+        id: check-frontend
+        run: |
+          set -euo pipefail
+
+          sha="${{ steps.resolve-sha.outputs.sha }}"
+          repo="${{ steps.repos.outputs.frontend_repo }}"
+
+          if output=$(aws ecr describe-images --repository-name "${repo}" --image-ids "imageTag=${sha}" 2>&1); then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+          elif echo "${output}" | grep -q "ImageNotFoundException"; then
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "::error::Unexpected ECR error while checking ${repo}:${sha}: ${output}"
+            exit 1
+          fi
+
+      - name: Decide whether publishing is needed
+        id: publish-decision
+        run: |
+          set -euo pipefail
+
+          if [ "${{ steps.check-backend.outputs.exists }}" = "true" ] && [ "${{ steps.check-frontend.outputs.exists }}" = "true" ]; then
+            echo "publish_needed=false" >> "$GITHUB_OUTPUT"
+          else
+            echo "publish_needed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Login to Amazon ECR
+        if: steps.publish-decision.outputs.publish_needed == 'true'
+        uses: aws-actions/amazon-ecr-login@v2
+
+      - name: Build and push backend image
+        if: steps.publish-decision.outputs.publish_needed == 'true' && steps.check-backend.outputs.exists != 'true'
+        run: |
+          set -euo pipefail
+
+          uri="${{ steps.repos.outputs.registry }}/${{ steps.repos.outputs.backend_repo }}:${{ steps.resolve-sha.outputs.sha }}"
+          docker build -t "${uri}" ./backend
+          docker push "${uri}"
+
+      - name: Build and push frontend image
+        if: steps.publish-decision.outputs.publish_needed == 'true' && steps.check-frontend.outputs.exists != 'true'
+        run: |
+          set -euo pipefail
+
+          uri="${{ steps.repos.outputs.registry }}/${{ steps.repos.outputs.frontend_repo }}:${{ steps.resolve-sha.outputs.sha }}"
+          docker build -t "${uri}" ./frontend
+          docker push "${uri}"
+
+      - name: Summary
+        if: always() && steps.resolve-sha.outcome == 'success'
+        run: |
+          {
+            echo "### Publish result for SHA \`${{ steps.resolve-sha.outputs.sha }}\`"
+            if [ "${{ steps.publish-decision.outputs.publish_needed }}" = "false" ]; then
+              echo "- Both backend and frontend images already existed for this SHA. Nothing was pushed."
+            else
+              echo "- backend: $([ '${{ steps.check-backend.outputs.exists }}' = 'true' ] && echo 'already existed, skipped' || echo 'published')"
+              echo "- frontend: $([ '${{ steps.check-frontend.outputs.exists }}' = 'true' ] && echo 'already existed, skipped' || echo 'published')"
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
