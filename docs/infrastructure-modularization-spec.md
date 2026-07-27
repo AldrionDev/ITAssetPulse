@@ -211,8 +211,10 @@ public-Atlas design needs no VPC or ECR outputs). Atlas allow-listing is exclusi
 
 ### 4.5 `ecs` — remote state, ephemeral
 
-State key: `itassetpulse/demo/ecs.tfstate`. The application stack. Reads remote state from `foundation`,
-`data`, and `account`.
+State key: `itassetpulse/demo/ecs.tfstate`. The application stack, delivered in two increments: the core
+compute/routing increment reads remote state from `foundation` and `data` only; the observability increment
+(alarms, dashboard, SNS wiring — see the last two bullets below) adds a read of the `account` remote state
+for the SNS topic ARN. Until the observability increment lands, `ecs` reads only `foundation` and `data`.
 
 - ECS cluster.
 - **Target groups** (frontend, backend) and their **health check configuration** (path, interval, timeout,
@@ -233,8 +235,10 @@ State key: `itassetpulse/demo/ecs.tfstate`. The application stack. Reads remote 
   backend target group with the `url-rewrite` transform `^/api/?(.*)$` → `/$1`.
 - `release_sha` input and ECR image **digest lookup** for immutable image pinning.
 - JWT Secrets Manager secret (application-owned) and the minimal IAM to read it.
-- CloudWatch log groups (7-day retention), alarms, and one concise dashboard.
-- SNS topic ARN consumed from the `account` remote state (used by the alarms).
+- CloudWatch log groups (7-day retention) — core increment. Alarms and one concise dashboard —
+  observability increment.
+- SNS topic ARN consumed from the `account` remote state (used by the alarms) — observability increment
+  only; the core increment does not read the `account` remote state.
 
 The ALB, listener, and routing rules stay in the root stack (they express this application's specific topology
 and are not generic). No DNS alias, no HTTPS, no autoscaling in v1.
@@ -348,8 +352,9 @@ Dependency graph (one-directional, no cycles):
   foundation ── independent
   data       ── independent of foundation (public-Atlas design)
 
-  ecs        ── reads remote state of: foundation, data, account
-                (SNS topic ARN comes from the account remote state)
+  ecs        ── core increment reads remote state of: foundation, data
+                observability increment adds: account
+                (SNS topic ARN comes from the account remote state, observability increment only)
 
   eks (later)── reads remote state of: foundation, data (and account as needed);
                 independent of ecs
@@ -393,8 +398,9 @@ persistent layers).
 - `data`: `atlas_project_id`, `mongodb_atlas_srv_host`, `mongodb_atlas_app_name`, `atlas_database_username`,
   `mongodb_database_name`. The Atlas **API keys are not variables** — they come from the provider environment
   variables (see §4.4). The database password is generated (`random_password`), not supplied.
-- `ecs`: `release_sha`, `frontend`/`backend` sizing (`cpu`, `memory`), alarm thresholds, log retention. The
-  SNS topic ARN is read directly from the `account` remote state, not passed as a variable.
+- `ecs`: `release_sha`, `frontend`/`backend` sizing (`cpu`, `memory`), log retention (core increment); alarm
+  thresholds (observability increment). The SNS topic ARN is read directly from the `account` remote state
+  (observability increment only), not passed as a variable.
 
 ### 7.2 Key outputs per stack
 
