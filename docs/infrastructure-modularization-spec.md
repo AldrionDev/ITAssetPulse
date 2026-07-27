@@ -215,7 +215,17 @@ State key: `itassetpulse/demo/ecs.tfstate`. The application stack. Reads remote 
 `data`, and `account`.
 
 - ECS cluster.
-- `modules/ecs-fargate-service` instantiated twice (frontend, backend), each with `desired_count = 1`.
+- **Target groups** (frontend, backend) and their **health check configuration** (path, interval, timeout,
+  healthy/unhealthy threshold, matcher). Owned here, not by `modules/ecs-fargate-service`: AWS requires a
+  target group to already be attached to a listener/listener rule before an ECS service can reference it in
+  its `load_balancer` block, so the target group must be created next to the ALB/listener that attaches it,
+  not inside the reusable service module (which is called before the listener rule that would otherwise need
+  to depend on it — a dependency direction that cannot be expressed across a module boundary). `target_type =
+  "ip"` (Fargate `awsvpc` requirement).
+- `modules/ecs-fargate-service` instantiated twice (frontend, backend), each with `desired_count = 1` and the
+  matching target group ARN passed in as `target_group_arn`. Each `module` block carries an explicit
+  `depends_on` on the listener rule that attaches its target group, so the target group is guaranteed to be
+  "behind" a listener before the module's ECS service is created.
 - Internet-facing ALB, ALB security group, HTTP listener. **ALB security-group contract:** ingress TCP 80 from
   `0.0.0.0/0`; egress TCP 80 to the frontend task security group; egress TCP 3000 to the backend task security
   group.
@@ -277,19 +287,23 @@ The shared pattern of the two single-container Fargate services. Used by **two e
 - Inputs: `name`, `cluster_arn`, `common_tags`, `project_name`, `environment`, `container_image`
   (digest-pinned URI), `container_port`, `desired_count`, `cpu`, `memory`, `public_subnet_ids`,
   `assign_public_ip`, `alb_security_group_id`, `vpc_id`, `environment_variables`, `secrets`
-  (name → Secrets Manager ARN), `health_check_path`, `health_check_grace_period_seconds`,
+  (name → Secrets Manager ARN), `target_group_arn` (Elastic Load Balancing target group ARN, created and
+  attached to a listener/listener rule by the `ecs` root stack — see §4.5), `health_check_grace_period_seconds`,
   `deployment_min_healthy_percent`, `deployment_max_percent`, `log_retention_days`. **No role ARNs are passed
-  in.**
+  in. No `health_check_path` input** — health check configuration lives on the target group, which this module
+  does not create (§4.5).
 - IAM ownership: the module **creates its own task execution role**, grants the standard ECR pull and
   CloudWatch Logs permissions, and derives a **narrowly scoped** `secretsmanager:GetSecretValue` policy from
   exactly the ARNs in the supplied `secrets` map (no `Resource = "*"`). The module does **not** create a task
   role, because the application makes no AWS API calls at runtime; a task role would only be added if a future
   need for AWS API access appears.
-- Resources: CloudWatch log group; ECS task definition; ECS service; **task execution role + its scoped
-  policies**; service-specific security group with **explicit rules** — inbound only from the ALB security
-  group on the container port, and **explicit egress** (see below); target group; container port mapping;
-  health check configuration; deployment min/max healthy percentages; public-subnet networking with
-  `assign_public_ip`; environment and Secrets Manager injection via the task definition `secrets` field.
+- Resources: CloudWatch log group; ECS task definition; ECS service (its `load_balancer` block targets the
+  caller-supplied `target_group_arn`); **task execution role + its scoped policies**; service-specific security
+  group with **explicit rules** — inbound only from the ALB security group on the container port, and
+  **explicit egress** (see below); container port mapping; deployment min/max healthy percentages;
+  public-subnet networking with `assign_public_ip`; environment and Secrets Manager injection via the task
+  definition `secrets` field. **No target group and no health check configuration** — both are owned by the
+  `ecs` root stack (§4.5).
 - Egress (explicit, not implicit): the service security group permits the outbound access the tasks actually
   need over the public internet — ECR image pull, CloudWatch Logs, Secrets Manager, DNS, and (backend) the
   MongoDB Atlas endpoint. For v1 this is implemented as **allow-all egress (`0.0.0.0/0`), documented** as an
@@ -297,15 +311,16 @@ The shared pattern of the two single-container Fargate services. Used by **two e
 - Apply behavior: the ECS service sets **`wait_for_steady_state = false`** (fixed in v1, **not** a module
   input), so `terraform apply` creates the service and task and returns without waiting for backend target
   health. This is what enables the manual Atlas allow-list window (see §11).
-- Outputs: `service_name`, `target_group_arn`, `security_group_id`, `log_group_name`, `task_definition_arn`,
-  `execution_role_arn`.
+- Outputs: `service_name`, `security_group_id`, `log_group_name`, `task_definition_arn`, `execution_role_arn`.
+  **No `target_group_arn` output** — the module receives the target group ARN as an input, it does not produce
+  one.
 - Deliberate limits: this is **not** a universal ECS platform module. No arbitrary container count, no sidecar
   abstraction, no capacity-provider combinations, no blue/green, no Service Connect, no Cloud Map, no
   deployment-controller choice, no arbitrary IAM policy JSON input, and no excessive optional dynamic blocks.
   If the frontend and backend needs diverge too much, prefer some repetition over a complex conditional module.
 
-Everything else (ALB, listeners, routing, URL rewrite, ECR digest lookup, release-SHA selection, JWT secret,
-alarms, dashboard, SNS wiring) stays in the `ecs` root stack.
+Everything else (ALB, listeners, routing, URL rewrite, target groups, health check configuration, ECR digest
+lookup, release-SHA selection, JWT secret, alarms, dashboard, SNS wiring) stays in the `ecs` root stack.
 
 ---
 

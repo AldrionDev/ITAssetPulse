@@ -160,3 +160,26 @@ jobs:
 
       - name: Terraform validate (data)
         run: terraform -chdir=infra/terraform/data validate
+
+  terraform-ecs-fargate-service-validate:
+    name: Terraform ecs-fargate-service module validate
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "~1.10.0"
+          terraform_wrapper: false
+
+      - name: Terraform fmt check (modules/ecs-fargate-service)
+        run: terraform fmt -check -recursive infra/terraform/modules/ecs-fargate-service
+
+      - name: Terraform init (modules/ecs-fargate-service, no backend)
+        run: terraform -chdir=infra/terraform/modules/ecs-fargate-service init -backend=false
+
+      - name: Terraform validate (modules/ecs-fargate-service)
+        run: terraform -chdir=infra/terraform/modules/ecs-fargate-service validate
