@@ -154,6 +154,10 @@ override.tf.json
 *_override.tf
 *_override.tf.json
 
+# Terraform plan files may contain sensitive values
+*.tfplan
+*.tfplan.*
+
 # Terraform backend local config
 backend.hcl
 
