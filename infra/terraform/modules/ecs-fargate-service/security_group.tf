@@ -24,7 +24,7 @@ resource "aws_vpc_security_group_ingress_rule" "from_alb" {
 # destination egress is a deferred hardening item, not v1 scope.
 resource "aws_vpc_security_group_egress_rule" "all" {
   security_group_id = aws_security_group.this.id
-  description       = "Allow-all egress (ephemeral demo; see spec §5.3)"
+  description       = "Allow-all egress (ephemeral demo; see spec section 5.3)"
 
   cidr_ipv4   = "0.0.0.0/0"
   ip_protocol = "-1"
