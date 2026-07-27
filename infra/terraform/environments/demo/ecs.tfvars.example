@@ -1,10 +1,14 @@
-# ecs (demo) — copy to ecs.tfvars (git-ignored) and set values. Implemented in #180 / #181.
+# ecs (demo) — copy to ecs.tfvars (git-ignored) and set values. Implemented in #180.
 project_name = "itassetpulse"
 environment  = "demo"
 aws_region   = "eu-north-1" # example — confirm per spec §16
 
+# Name of the bucket created by the bootstrap stack (contains the AWS account
+# ID; never hardcoded in .tf, see variables.tf):
+state_bucket = "<your-terraform-state-bucket>"
+
 # Full Git commit SHA of the images published by publish-images.yml (spec §10.2):
-release_sha  = "<git-commit-sha>"
+release_sha = "<git-commit-sha>"
 
 # Fargate sizing (examples)
 frontend_cpu    = 256
@@ -12,7 +16,7 @@ frontend_memory = 512
 backend_cpu     = 256
 backend_memory  = 512
 
-log_retention_days = 7
+frontend_desired_count = 1
+backend_desired_count  = 1
 
-# Alarm thresholds (examples)
-alb_5xx_threshold = 5
+log_retention_days = 7
