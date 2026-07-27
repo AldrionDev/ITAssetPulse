@@ -32,7 +32,7 @@ resource "aws_vpc_security_group_ingress_rule" "alb_http" {
 
 resource "aws_vpc_security_group_egress_rule" "alb_to_frontend" {
   security_group_id = aws_security_group.alb.id
-  description       = "To the frontend service's container port."
+  description       = "To the frontend service container port."
   cidr_ipv4         = "0.0.0.0/0"
   from_port         = var.frontend_container_port
   to_port           = var.frontend_container_port
@@ -43,7 +43,7 @@ resource "aws_vpc_security_group_egress_rule" "alb_to_frontend" {
 
 resource "aws_vpc_security_group_egress_rule" "alb_to_backend" {
   security_group_id = aws_security_group.alb.id
-  description       = "To the backend service's container port."
+  description       = "To the backend service container port."
   cidr_ipv4         = "0.0.0.0/0"
   from_port         = var.backend_container_port
   to_port           = var.backend_container_port
