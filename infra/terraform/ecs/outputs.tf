@@ -37,3 +37,8 @@ output "jwt_secret_arn" {
   description = "ARN of the Secrets Manager secret holding JWT_SECRET. Never the secret value."
   value       = aws_secretsmanager_secret.jwt.arn
 }
+
+output "dashboard_name" {
+  description = "Name of the CloudWatch observability dashboard."
+  value       = aws_cloudwatch_dashboard.this.dashboard_name
+}

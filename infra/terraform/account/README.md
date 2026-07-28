@@ -7,10 +7,12 @@ State key: `itassetpulse/global/account.tfstate`.
 
 - `aws_budgets_budget` — monthly cost budget (`budget_limit_usd`), `ACTUAL` alerts at 50/80/100%. A delayed
   cost signal, not a real-time kill switch. No automatic budget actions.
-- `aws_sns_topic` + `aws_sns_topic_policy` — shared topic the budget notifies; the policy scopes
-  `SNS:Publish` to the `budgets.amazonaws.com` service principal, restricted by `aws:SourceAccount` (this
-  account) and `aws:SourceArn` (an account-scoped wildcard budget ARN pattern — see "Budget/SNS dependency
-  order" below for why it is not scoped to the specific budget resource).
+- `aws_sns_topic` + `aws_sns_topic_policy` — shared topic the budget notifies; the policy has two
+  statements: one scopes `SNS:Publish` to the `budgets.amazonaws.com` service principal, restricted by
+  `aws:SourceAccount` (this account) and `aws:SourceArn` (an account-scoped wildcard budget ARN pattern — see
+  "Budget/SNS dependency order" below for why it is not scoped to the specific budget resource); the other
+  scopes `SNS:Publish` to the `cloudwatch.amazonaws.com` service principal for the `ecs` stack's #181
+  observability alarms (see "CloudWatch alarm SNS publish permission" below).
 - `aws_sns_topic_subscription` — one `email` subscription to `budget_notification_email`. Requires a
   one-time manual confirmation (see "SNS email subscription lifecycle" below).
 - `aws_iam_openid_connect_provider` for `token.actions.githubusercontent.com` — created only if
@@ -71,6 +73,25 @@ pattern built from `aws_partition` + `aws_caller_identity`
 only the one this stack manages — a deliberate trade-off to avoid the cycle. Combined with the
 `aws:SourceAccount` condition, it still excludes every other AWS account's Budgets resources; the principal
 remains scoped to the `budgets.amazonaws.com` service only.
+
+## CloudWatch alarm SNS publish permission
+
+The `AllowCloudWatchAlarmsPublish` statement lets the `ecs` stack's #181 observability alarms
+(`<name_prefix>-frontend-healthy-host`, `<name_prefix>-backend-healthy-host`, `<name_prefix>-alb-target-5xx`)
+deliver their `alarm_actions`/`ok_actions` to this topic. Unlike the Budgets statement above (which is
+account-scoped, for the cycle-avoidance reason explained), this statement uses **three separate `ArnLike`
+patterns** (`local.cloudwatch_alarm_source_arns`), one per alarm — each is
+`arn:<partition>:cloudwatch:<region>:<account-id>:alarm:<project_name>-*-<alarm-suffix>`, where the wildcard
+replaces only the `ecs` stack's `environment` segment (e.g. `demo`) and each alarm's functional suffix
+(`-frontend-healthy-host`, `-backend-healthy-host`, `-alb-target-5xx`) stays fixed. This is deliberately
+narrower than a single `<project_name>-*` wildcard would be, at the cost of listing a new pattern if a future
+alarm is added to the `ecs` stack.
+
+This stack stays environment-agnostic: it takes no `var.environment` input and does not read the `ecs` remote
+state to build these patterns — the dependency direction remains `account → ecs` (§6), never the reverse. Both
+statements are combined into the same `data.aws_iam_policy_document`, so `aws_sns_topic_policy.budget_alerts`
+carries both grants; `Resource` on both statements is always exactly `aws_sns_topic.budget_alerts.arn`, never
+`"*"`.
 
 ## SNS email subscription lifecycle
 
