@@ -2,9 +2,9 @@
 
 The ECS Fargate application stack. Spec: §4.5. State key: `itassetpulse/demo/ecs.tfstate`.
 
-Delivered in two increments: this core increment (#180) creates the cluster, ALB, routing, secrets, and
-services; the observability increment (#181) adds CloudWatch alarms, a dashboard, and SNS notification
-wiring on top.
+Delivered in two increments: the core increment (#180) creates the cluster, ALB, routing, secrets, and
+services; this observability increment (#181) adds CloudWatch alarms, a dashboard, and SNS notification
+wiring on top (see "Observability (#181)" below).
 
 ## What it creates
 
@@ -31,20 +31,21 @@ wiring on top.
   below.
 - `module.frontend` / `module.backend` — two explicit `modules/ecs-fargate-service` instances (no
   `for_each`), each with its own execution role.
+- **(#181 observability increment)** three `aws_cloudwatch_metric_alarm` resources and one
+  `aws_cloudwatch_dashboard` — see "Observability (#181)" below.
 
 ## What it reads
 
-Only `foundation` and `data` remote state (`data.terraform_remote_state`, first use of this pattern in the
-repo):
+`foundation`, `data`, and `account` remote state (`data.terraform_remote_state`, first use of this pattern in
+the repo):
 
 - `foundation`: `vpc_id`, `public_subnet_ids`, `backend_ecr_repository_url` + `_arn`,
   `frontend_ecr_repository_url` + `_arn`.
 - `data`: `mongodb_secret_arn`.
-
-**Not** the `account` remote state. The spec originally described `ecs` as also reading the `account`
-remote state for the SNS topic ARN — that read has no consumer in this increment (no alarms exist yet), so
-it is deferred to #181, which introduces the read together with the alarm wiring that actually uses it
-(`docs/infrastructure-modularization-spec.md` §4.5, §6, §7.1 note this split).
+- `account` **(#181 observability increment only)**: `sns_topic_arn`, consumed by the three alarms'
+  `alarm_actions`/`ok_actions`. The core increment (#180) deliberately deferred this read — it had no
+  consumer until the alarms existed (`docs/infrastructure-modularization-spec.md` §4.5, §6, §7.1 note this
+  split).
 
 The S3 bucket used for these remote-state reads comes from `var.state_bucket` (not hardcoded — the bucket
 name embeds the AWS account ID, spec §8).
@@ -149,6 +150,38 @@ is a manual, temporary step:
 **The backend task's public IP must be re-allow-listed after every task replacement or release rollout**,
 because a new task receives a new public IP. This is documented, intentional demo behavior — not automated.
 
+## Observability (#181)
+
+Three fixed (non-variable) CloudWatch alarms and one dashboard, defined in `observability.tf`:
+
+- `${local.name_prefix}-frontend-healthy-host` / `-backend-healthy-host` — `AWS/ApplicationELB`
+  `HealthyHostCount`, dimensions `LoadBalancer` (`aws_lb.this.arn_suffix`) + `TargetGroup` (the matching
+  target group's `arn_suffix`), `Maximum` statistic, `< 1` over 5×60s, `treat_missing_data = "breaching"`.
+  `Maximum` (not `Minimum`) only fires once every ALB node agrees there are zero healthy targets, avoiding
+  noise from a single node's transient, out-of-sync reading; `breaching` missing-data reflects that
+  `desired_count = 1` gives each service no redundancy, so a reporting gap is itself a potential outage.
+  Intentionally scaling a service's `desired_count` to `0` (without destroying the stack) will trip its
+  alarm — an accepted trade-off, since the alarm resource itself survives that case. On a full `ecs destroy`,
+  the alarms depend (via `arn_suffix` references) on the ALB/target groups they monitor, so Terraform's
+  destroy order normally removes the alarms before those referenced resources — an extra alarm email during
+  destroy is therefore not guaranteed, though a short CloudWatch evaluation race is not fully ruled out
+  either; an accepted demo trade-off.
+- `${local.name_prefix}-alb-target-5xx` — `AWS/ApplicationELB` `HTTPCode_Target_5XX_Count`, dimension
+  `LoadBalancer` only (ALB-wide, not per target group — covers 5xx from either target, but **not**
+  `HTTPCode_ELB_5XX_Count`, a separate ALB-generated-error metric out of scope here), `Sum` statistic
+  (`Minimum`/`Maximum`/`Average` all report `1` for this metric per AWS docs), `>= 5` over one 300s period,
+  `treat_missing_data = "notBreaching"` (this metric only publishes a datapoint on a nonzero value, so no
+  data means no 5xx — opposite semantics from the healthy-host alarms above).
+- All three alarms send both `alarm_actions` and `ok_actions` to `local.sns_topic_arn` (the `account` stack's
+  SNS topic, see "What it reads" above); `insufficient_data_actions` is empty. Publishing requires the
+  `AllowCloudWatchAlarmsPublish` statement on that topic's policy (`account/sns.tf`, see
+  `account/README.md`).
+- `aws_cloudwatch_dashboard.this` (`${local.name_prefix}-observability`) — one screen, 6 widgets, 2 columns
+  ×3 rows: ECS CPU (frontend+backend, one widget), ECS Memory (frontend+backend, one widget), ALB
+  RequestCount, ALB TargetResponseTime, ALB target 5xx, and Target Group Healthy Hosts (frontend+backend, one
+  widget, `Maximum` statistic — matching the alarms above so the dashboard reads consistently with what
+  actually triggers them). No Container Insights, no custom metrics, no log widgets.
+
 ## Inputs / outputs
 
 - Inputs: `project_name`, `environment`, `common_tags`, `aws_region`, `state_bucket`, `release_sha`,
@@ -156,10 +189,13 @@ because a new task receives a new public IP. This is documented, intentional dem
   `backend_cpu`/`backend_memory`, `frontend_desired_count`, `backend_desired_count`,
   `backend_health_check_grace_period_seconds`, `log_retention_days`. See
   `../environments/demo/ecs.tfvars.example`. `deployment_min_healthy_percent` (100) and
-  `deployment_max_percent` (200) are fixed in `services.tf`, not exposed as variables.
+  `deployment_max_percent` (200) are fixed in `services.tf`, not exposed as variables. The #181 alarm
+  thresholds/periods/statistics are likewise fixed in `observability.tf`, not variables — a single-environment
+  demo has no real caller need to tune them.
 - Outputs: `ecs_cluster_name`, `alb_dns_name`, `alb_arn`, `frontend_service_name`, `backend_service_name`,
-  `frontend_target_group_arn`, `backend_target_group_arn`, `jwt_secret_arn`. The JWT secret **value** is
-  never output. (`dashboard_name` will be added by #181.)
+  `frontend_target_group_arn`, `backend_target_group_arn`, `jwt_secret_arn`, `dashboard_name`. The JWT
+  secret **value** is never output. No alarm-name outputs — the three alarm names are deterministic
+  (`${local.name_prefix}-<suffix>`) and don't need a Terraform output for a runbook to reference them.
 
 Provider version constraints (`versions.tf`): `aws` is pinned `>= 6.19.0, < 7.0.0` (not just `~> 6.0`)
 because the `aws_lb_listener_rule` `transform` block used by `listener.tf` was introduced in 6.19.0; a
@@ -202,11 +238,14 @@ against a backend task's public IP; every check below goes through the ALB DNS n
 
 Destroying this stack removes: ECS services, the Terraform-managed task definition revisions, the ECS
 cluster, the ALB, the listener/rule, both target groups, both service security groups (module-owned), both
-CloudWatch log groups (module-owned), and the JWT secret (`recovery_window_in_days = 0` → immediate, so a
-following `apply` never blocks on a pending-deletion secret).
+CloudWatch log groups (module-owned), the JWT secret (`recovery_window_in_days = 0` → immediate, so a
+following `apply` never blocks on a pending-deletion secret), the three CloudWatch alarms, and the
+observability dashboard.
 
 It does **not** touch `foundation`, `data`, `account`, or `bootstrap` state/resources, ECR repositories or
-images, MongoDB Atlas, GitHub variables, or local Docker volumes — those live in separate state files.
+images, MongoDB Atlas, GitHub variables, or local Docker volumes — those live in separate state files. The
+`account` stack's persistent SNS topic and its `AllowCloudWatchAlarmsPublish` policy statement also survive
+(they are only referenced, never created, by this stack).
 
-Implemented in: **#180** (this file, core stack) — **#181** adds observability (alarms, dashboard, SNS
-wiring, and the `account` remote-state read for the SNS topic ARN).
+Implemented in: **#180** (core stack) and **#181** (this section: alarms, dashboard, SNS wiring, and the
+`account` remote-state read for the SNS topic ARN).

@@ -1,7 +1,6 @@
-# First stack in this repo to read another stack's remote state. Only
-# foundation and data are read - the account remote state (SNS topic ARN) is
-# introduced by #181 together with the alarms that actually consume it; this
-# core increment has no use for it (spec §4.5, issue #180).
+# First stack in this repo to read another stack's remote state: foundation
+# and data (core increment, #180), plus account (observability increment,
+# #181 - the SNS topic ARN consumed by the alarms in observability.tf).
 
 data "terraform_remote_state" "foundation" {
   backend = "s3"
@@ -19,6 +18,16 @@ data "terraform_remote_state" "data" {
   config = {
     bucket = var.state_bucket
     key    = "itassetpulse/demo/data.tfstate"
+    region = var.aws_region
+  }
+}
+
+data "terraform_remote_state" "account" {
+  backend = "s3"
+
+  config = {
+    bucket = var.state_bucket
+    key    = "itassetpulse/global/account.tfstate"
     region = var.aws_region
   }
 }
