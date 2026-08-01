@@ -3,9 +3,8 @@
 Modular Terraform for the ITAssetPulse ephemeral demo. Design of record:
 [`docs/infrastructure-modularization-spec.md`](../../docs/infrastructure-modularization-spec.md).
 
-> **The directory structure is intentionally documentation-only after issue #171. Do not run `terraform init`,
-> `terraform plan`, or `terraform apply` in these stack directories until the corresponding implementation
-> issue adds the Terraform configuration.**
+> **The modular Terraform roots are implemented. The `foundation`, `data` and ECS demo resources are currently
+> not provisioned in AWS. Any future mutation requires a reviewed saved plan and explicit approval.**
 
 Amazon ECS Fargate is the primary v1 compute platform; EKS is deferred to a later, optional stack. The design
 is a consciously ephemeral demo (`apply → demo → destroy`), optimized for minimal idle cost. See the
@@ -78,7 +77,8 @@ validate`:
 | `account` | `terraform-account-validate` |
 | `foundation` (+ `modules/network`, `modules/ecr-repository`, fmt-checked directly) | `terraform-foundation-validate` |
 | `data` | `terraform-data-validate` |
-| `ecs`, `modules/ecs-fargate-service` | none yet — no `.tf` until #179/#180 |
+| `ecs` | `terraform-ecs-validate` |
+| `modules/ecs-fargate-service` | `terraform-ecs-fargate-service-validate` |
 
 `modules/network` and `modules/ecr-repository` are fmt-checked directly but not validated standalone — a
 module's `terraform validate` is exercised through the root stack that consumes it (`foundation`).
@@ -102,6 +102,8 @@ same PR. This is part of that issue's Definition of Done, not a follow-up task.
 | `modules/ecs-fargate-service` | #179 |
 | `ecs` core stack | #180 |
 | ECS observability | #181 |
+| Ephemeral demo lifecycle runbook | #182 |
+| Superseded path removal | #183 |
 
 ## Baseline
 

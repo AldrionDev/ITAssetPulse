@@ -1,50 +1,30 @@
-# CI/CD with GitHub Actions
+# CI/CD
 
-This document explains the CI/CD workflow used by the ITAssetPulse demo project.
+This document describes the CI/CD state of the ITAssetPulse repository as it is implemented today.
 
-The goal of this setup is to keep the deployment process simple, understandable, and suitable for a portfolio project.
-
----
-
-## Current CI/CD scope
-
-GitHub Actions is used for:
-
-- Backend build validation
-- Frontend build validation
-- Docker image build
-- Docker image push to Amazon ECR
-- Restarting existing Kubernetes deployments in EKS
-- Waiting for Kubernetes rollout completion
-
-GitHub Actions is not used for:
-
-- Running `terraform apply`
-- Creating or changing infrastructure
-- Managing MongoDB Atlas resources
-- GitOps
-- ArgoCD
-- Helm deployments
-- Blue/green deployments
-- Canary deployments
-- Multiple environments
-
-Infrastructure is managed separately with Terraform from the local development environment.
+It intentionally documents only what exists. Planned systems are named as planned, never as implemented.
 
 ---
 
-## Workflow files
+## Summary
 
-The project uses two GitHub Actions workflow files:
+| Concern | Owner today |
+| ------- | ----------- |
+| Build, lint, test and Terraform validation | GitHub Actions (`ci.yml`) |
+| Container image publishing to Amazon ECR | GitHub Actions (`publish-images.yml`), transitional and manual |
+| AWS infrastructure and ECS service rollout | Terraform, executed manually with reviewed saved plans |
+| Application deployment from a workflow | **Nothing — no workflow deploys the application** |
+
+Workflow files currently in the repository:
 
 ```text
 .github/workflows/ci.yml
-.github/workflows/deploy.yml
-````
+.github/workflows/publish-images.yml
+```
 
 ---
 
-## CI workflow
+## GitHub Actions CI
 
 File:
 
@@ -52,528 +32,105 @@ File:
 .github/workflows/ci.yml
 ```
 
-Purpose:
+Triggered on pull requests and on pushes to `main`.
 
-The CI workflow validates that both the backend and frontend can be built successfully.
+This workflow configures **no AWS credentials** and performs no AWS API call. Every Terraform job runs with the
+backend disabled, so no remote state is read or written.
 
-It runs on:
+### Backend job — `backend-build`
 
-* Pull requests
-* Pushes to the main branch
-
-Main steps:
+Runs in `backend/` on Node.js 20 with npm caching:
 
 ```text
-Checkout repository
-Setup Node.js
-Install backend dependencies
-Build backend
-Install frontend dependencies
-Build frontend
+npm ci
+npm run lint:check
+npm test -- --passWithNoTests
+npm run build
 ```
 
-The CI workflow does not connect to AWS and does not deploy the application.
+### Frontend job — `frontend-build`
+
+Runs in `frontend/` on Node.js 20 with npm caching:
+
+```text
+npm ci
+npm run lint
+npm run build
+```
+
+### Terraform validation jobs
+
+Each job installs Terraform `~1.10.0` and runs `terraform fmt -check -recursive`, `terraform init -backend=false`
+and `terraform validate` for its scope:
+
+| Job | Scope |
+| --- | ----- |
+| `terraform-bootstrap-validate` | `infra/terraform/bootstrap` |
+| `terraform-account-validate` | `infra/terraform/account` |
+| `terraform-foundation-validate` | `infra/terraform/foundation`, plus `fmt -check` for `modules/network` and `modules/ecr-repository` |
+| `terraform-data-validate` | `infra/terraform/data` |
+| `terraform-ecs-fargate-service-validate` | `infra/terraform/modules/ecs-fargate-service` |
+| `terraform-ecs-validate` | `infra/terraform/ecs` |
+
+`modules/network` and `modules/ecr-repository` are format-checked directly; their `terraform validate` is exercised
+through the `foundation` root stack that consumes them.
 
 ---
 
-## Deploy workflow
+## Transitional image publishing
 
 File:
 
 ```text
-.github/workflows/deploy.yml
+.github/workflows/publish-images.yml
 ```
 
-Purpose:
+This is the only workflow that authenticates to AWS. It is **transitional, not the final publishing
+architecture**.
 
-The deploy workflow builds Docker images, pushes them to Amazon ECR, and restarts the existing Kubernetes deployments in EKS.
+### Behaviour
 
-Main steps:
+- **Manual dispatch only** (`workflow_dispatch`), and only from the `main` branch.
+- Takes a **release ref or commit SHA** as input, resolves it to a full commit SHA, and **verifies that the SHA is
+  an ancestor of `origin/main`**. A commit outside `main` history is refused.
+- Requires the repository variables `AWS_IMAGE_PUBLISH_ROLE_ARN`, `AWS_REGION`, `PROJECT_NAME` and `ENVIRONMENT`;
+  a preflight step fails fast when any of them is missing.
+- Builds the **backend** and **frontend** Docker images from `./backend` and `./frontend`.
+- Pushes them under **immutable full-SHA image tags** — no `latest` tag is produced or used.
+- **Idempotent:** it inspects ECR first and skips any image whose SHA tag already exists, so re-running it for an
+  already published SHA pushes nothing and does not fail.
 
-```text
-Checkout repository
-Configure AWS credentials
-Login to Amazon ECR
-Build backend Docker image
-Push backend Docker image to ECR
-Build frontend Docker image
-Push frontend Docker image to ECR
-Update kubeconfig for EKS
-Restart backend deployment
-Restart frontend deployment
-Wait for backend rollout
-Wait for frontend rollout
-Show running pods
-```
+### Authentication and its known weakness
 
-The deploy workflow uses the `latest` Docker image tag.
+The workflow authenticates to AWS by assuming an IAM role through the **shared account-level GitHub OIDC
+provider**. That provider is not owned exclusively by this project, which makes the dependency **unstable**:
+changes made outside this repository can break image publishing.
 
-This is simple and matches the current Terraform-managed Kubernetes deployment setup.
+Removing this dependency — together with the associated GitHub AWS secrets and variables — is tracked by
+**#207**. Until then the workflow stays as-is.
+
+### What it does not do
+
+The workflow **does not deploy the application** and **does not perform any ECS rollout**. Publishing an image has
+no effect on a running environment.
 
 ---
 
-## Required GitHub repository secrets
+## Deployment ownership
 
-The following secrets must be configured in GitHub:
-
-```text
-AWS_ACCESS_KEY_ID
-AWS_SECRET_ACCESS_KEY
-AWS_REGION
-AWS_ACCOUNT_ID
-BACKEND_ECR_REPOSITORY
-FRONTEND_ECR_REPOSITORY
-```
-
-Example non-sensitive values:
-
-```text
-AWS_REGION=eu-north-1
-AWS_ACCOUNT_ID=554422868760
-BACKEND_ECR_REPOSITORY=itassetpulse-demo-backend-ecr
-FRONTEND_ECR_REPOSITORY=itassetpulse-demo-frontend-ecr
-```
-
-Sensitive values:
-
-```text
-AWS_ACCESS_KEY_ID
-AWS_SECRET_ACCESS_KEY
-```
-
-These must never be committed to the repository.
-
-They must only be stored as GitHub repository secrets.
+- **No GitHub Actions workflow currently deploys the application.**
+- ECS infrastructure and service rollout are **Terraform-owned**, executed manually from a reviewed saved plan with
+  explicit approval.
+- The demo infrastructure is **currently not provisioned**: the `foundation`, `data` and `ecs` resources do not
+  exist in AWS. ECS Fargate + ALB is the implemented Terraform target architecture, not a running environment.
+- The future full rebuild of the demo environment is tracked by **#200**.
+- **HCP Terraform** for state and **Jenkins** for release and Terraform execution are planned under the
+  "Local Jenkins & HCP Terraform Migration v1" milestone. Neither is implemented.
 
 ---
 
-## AWS IAM user used by GitHub Actions
-
-The deployment uses a dedicated IAM user:
-
-```text
-github-actions-itassetpulse
-```
-
-This user is used by GitHub Actions to:
-
-* Authenticate to AWS
-* Push Docker images to ECR
-* Connect to the EKS cluster
-* Restart Kubernetes deployments
-
-For this demo milestone, GitHub repository secrets are used for AWS authentication.
-
-A more secure future improvement would be to replace long-lived AWS access keys with GitHub OIDC and an AWS IAM role.
-
----
-
-## Required AWS permissions
-
-The GitHub Actions IAM user needs ECR permissions for pushing Docker images.
-
-Required ECR actions include:
-
-```text
-ecr:GetAuthorizationToken
-ecr:BatchCheckLayerAvailability
-ecr:CompleteLayerUpload
-ecr:DescribeImages
-ecr:DescribeRepositories
-ecr:InitiateLayerUpload
-ecr:PutImage
-ecr:UploadLayerPart
-```
-
-The user also needs permission to describe the EKS cluster:
-
-```text
-eks:DescribeCluster
-```
-
-This is required for:
-
-```bash
-aws eks update-kubeconfig
-```
-
----
-
-## EKS access
-
-The EKS cluster authentication mode was updated from:
-
-```text
-CONFIG_MAP
-```
-
-to:
-
-```text
-API_AND_CONFIG_MAP
-```
-
-This allows the project to use EKS access entries while still keeping the existing ConfigMap-based access mode.
-
-The GitHub Actions IAM user has an EKS access entry:
-
-```text
-arn:aws:iam::554422868760:user/github-actions-itassetpulse
-```
-
-For this demo setup, it is associated with:
-
-```text
-AmazonEKSClusterAdminPolicy
-```
-
-Scope:
-
-```text
-cluster
-```
-
-This is simple and works for the demo project.
-
-In a production setup, this should be reduced to narrower namespace-level permissions.
-
----
-
-## Docker image tagging
-
-The current image tag is:
-
-```text
-latest
-```
-
-This is simple and matches the current Terraform-managed Kubernetes deployment.
-
-Current image format:
-
-```text
-554422868760.dkr.ecr.eu-north-1.amazonaws.com/itassetpulse-demo-backend-ecr:latest
-554422868760.dkr.ecr.eu-north-1.amazonaws.com/itassetpulse-demo-frontend-ecr:latest
-```
-
-Limitation:
-
-Using `latest` makes it harder to identify exactly which commit is running in the cluster.
-
-Future improvement:
-
-Use Git commit SHA tags, for example:
-
-```text
-backend:<commit-sha>
-frontend:<commit-sha>
-```
-
----
-
-## EKS deployment strategy
-
-The deployment strategy is intentionally simple.
-
-After new images are pushed to ECR, GitHub Actions restarts the Kubernetes deployments:
-
-```bash
-kubectl rollout restart deployment/itassetpulse-backend -n itassetpulse
-kubectl rollout restart deployment/itassetpulse-frontend -n itassetpulse
-```
-
-Then it waits for rollout completion:
-
-```bash
-kubectl rollout status deployment/itassetpulse-backend -n itassetpulse
-kubectl rollout status deployment/itassetpulse-frontend -n itassetpulse
-```
-
-This causes Kubernetes to create new pods that pull the latest images from ECR.
-
----
-
-## Manual deployment fallback
-
-If GitHub Actions is unavailable, the deployment can still be done manually.
-
-Login to ECR:
-
-```bash
-aws ecr get-login-password --region eu-north-1 | docker login --username AWS --password-stdin 554422868760.dkr.ecr.eu-north-1.amazonaws.com
-```
-
-Build images:
-
-```bash
-docker build -t itassetpulse-backend ./backend
-docker build -t itassetpulse-frontend ./frontend
-```
-
-Tag images:
-
-```bash
-docker tag itassetpulse-backend:latest 554422868760.dkr.ecr.eu-north-1.amazonaws.com/itassetpulse-demo-backend-ecr:latest
-docker tag itassetpulse-frontend:latest 554422868760.dkr.ecr.eu-north-1.amazonaws.com/itassetpulse-demo-frontend-ecr:latest
-```
-
-Push images:
-
-```bash
-docker push 554422868760.dkr.ecr.eu-north-1.amazonaws.com/itassetpulse-demo-backend-ecr:latest
-docker push 554422868760.dkr.ecr.eu-north-1.amazonaws.com/itassetpulse-demo-frontend-ecr:latest
-```
-
-Update kubeconfig:
-
-```bash
-aws eks update-kubeconfig \
-  --region eu-north-1 \
-  --name itassetpulse-demo-eks
-```
-
-Restart deployments:
-
-```bash
-kubectl rollout restart deployment/itassetpulse-backend -n itassetpulse
-kubectl rollout restart deployment/itassetpulse-frontend -n itassetpulse
-```
-
-Verify rollout:
-
-```bash
-kubectl rollout status deployment/itassetpulse-backend -n itassetpulse
-kubectl rollout status deployment/itassetpulse-frontend -n itassetpulse
-```
-
----
-
-## Verification commands
-
-Check ECR images:
-
-```bash
-aws ecr describe-images \
-  --repository-name itassetpulse-demo-backend-ecr \
-  --region eu-north-1
-```
-
-```bash
-aws ecr describe-images \
-  --repository-name itassetpulse-demo-frontend-ecr \
-  --region eu-north-1
-```
-
-Check EKS cluster:
-
-```bash
-aws eks describe-cluster \
-  --name itassetpulse-demo-eks \
-  --region eu-north-1 \
-  --query "cluster.status"
-```
-
-Check Kubernetes resources:
-
-```bash
-kubectl get pods -n itassetpulse
-kubectl get deployments -n itassetpulse
-kubectl get services -n itassetpulse
-kubectl get ingress -n itassetpulse
-```
-
-Check rollout status:
-
-```bash
-kubectl rollout status deployment/itassetpulse-backend -n itassetpulse
-kubectl rollout status deployment/itassetpulse-frontend -n itassetpulse
-```
-
----
-
-## Rollback and restart notes
-
-The current deployment uses the `latest` tag.
-
-Because of this, rollback is limited.
-
-Useful restart command:
-
-```bash
-kubectl rollout restart deployment/itassetpulse-backend -n itassetpulse
-kubectl rollout restart deployment/itassetpulse-frontend -n itassetpulse
-```
-
-Check rollout history:
-
-```bash
-kubectl rollout history deployment/itassetpulse-backend -n itassetpulse
-kubectl rollout history deployment/itassetpulse-frontend -n itassetpulse
-```
-
-Rollback to previous ReplicaSet if available:
-
-```bash
-kubectl rollout undo deployment/itassetpulse-backend -n itassetpulse
-kubectl rollout undo deployment/itassetpulse-frontend -n itassetpulse
-```
-
-Note:
-
-A better rollback strategy would use immutable image tags such as Git commit SHA tags.
-
----
-
-## Troubleshooting
-
-### GitHub Actions cannot authenticate to AWS
-
-Check these GitHub repository secrets:
-
-```text
-AWS_ACCESS_KEY_ID
-AWS_SECRET_ACCESS_KEY
-AWS_REGION
-```
-
-Also check that the IAM user exists:
-
-```text
-github-actions-itassetpulse
-```
-
----
-
-### ECR login fails
-
-Check that the IAM user has:
-
-```text
-ecr:GetAuthorizationToken
-```
-
-Also verify the AWS region:
-
-```text
-eu-north-1
-```
-
----
-
-### Docker push fails
-
-Check that the IAM user has push permissions for both ECR repositories:
-
-```text
-itassetpulse-demo-backend-ecr
-itassetpulse-demo-frontend-ecr
-```
-
-Also check the repository secrets:
-
-```text
-AWS_ACCOUNT_ID
-BACKEND_ECR_REPOSITORY
-FRONTEND_ECR_REPOSITORY
-```
-
----
-
-### kubectl says "You must be logged in to the server"
-
-This means AWS authentication may work, but Kubernetes/EKS access is missing.
-
-Check EKS access entries:
-
-```bash
-aws eks list-access-entries \
-  --cluster-name itassetpulse-demo-eks \
-  --region eu-north-1
-```
-
-Check associated policies:
-
-```bash
-aws eks list-associated-access-policies \
-  --cluster-name itassetpulse-demo-eks \
-  --region eu-north-1 \
-  --principal-arn arn:aws:iam::554422868760:user/github-actions-itassetpulse
-```
-
-The GitHub Actions IAM user should have an associated EKS access policy.
-
----
-
-### Rollout fails
-
-Check pods:
-
-```bash
-kubectl get pods -n itassetpulse
-```
-
-Check backend logs:
-
-```bash
-kubectl logs deployment/itassetpulse-backend -n itassetpulse
-```
-
-Check frontend logs:
-
-```bash
-kubectl logs deployment/itassetpulse-frontend -n itassetpulse
-```
-
-Check deployment details:
-
-```bash
-kubectl describe deployment/itassetpulse-backend -n itassetpulse
-kubectl describe deployment/itassetpulse-frontend -n itassetpulse
-```
-
-Common causes:
-
-* Image was not pushed to ECR
-* Wrong image tag
-* Pod cannot pull image
-* Backend cannot connect to MongoDB Atlas
-* MongoDB Atlas access list does not allow the NAT Gateway public IP
-* Kubernetes secret is missing or incorrect
-
----
-
-## Cost notes
-
-The CI/CD deployment only works while the AWS infrastructure exists.
-
-Cost-related resources include:
-
-* EKS cluster
-* EC2 worker node
-* NAT Gateway
-* Application Load Balancer
-* ECR storage
-* MongoDB Atlas paid tier, if used
-* GitHub Actions minutes, depending on GitHub plan
-
-After testing, the AWS infrastructure can be destroyed to avoid ongoing costs.
-
-Important:
-
-After `terraform destroy`, ECR repositories may be deleted and recreated empty.
-
-If this happens, Docker images must be pushed again before the EKS deployment can run successfully.
-
----
-
-## Future improvements
-
-Possible future improvements:
-
-* Use GitHub OIDC instead of long-lived AWS access keys
-* Use Git commit SHA image tags
-* Add image tag outputs to deployment logs
-* Add namespace-scoped Kubernetes permissions instead of cluster admin access
-* Add tests to the CI workflow
-* Add lint checks to the CI workflow
-* Add a monitoring/observability milestone
+## References
+
+- Target architecture and design of record: [`infrastructure-modularization-spec.md`](./infrastructure-modularization-spec.md)
+- Apply / demo / destroy procedure: [`runbooks/ephemeral-demo-lifecycle.md`](./runbooks/ephemeral-demo-lifecycle.md)
+- Terraform stack layout, state keys and CI job mapping: [`../infra/terraform/README.md`](../infra/terraform/README.md)

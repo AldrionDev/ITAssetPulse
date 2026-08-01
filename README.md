@@ -1,7 +1,7 @@
 # IT Asset Pulse
 
 > Full-stack IT Asset Management demo application extended into a cloud-native DevOps portfolio project.  
-> Built with NestJS, React, MongoDB Atlas, Docker, AWS EKS, ECR, and Terraform.
+> Built with NestJS, React, MongoDB Atlas, Docker, AWS ECS Fargate, ECR, and Terraform.
 
 ---
 
@@ -9,7 +9,7 @@
 
 IT Asset Pulse is a demo IT Asset Management application designed to showcase both full-stack development and DevOps/cloud engineering skills.
 
-The project started as a NestJS + React application and was extended with a real AWS-based deployment workflow using Terraform, Docker, ECR, EKS, Kubernetes, AWS Load Balancer Controller, and MongoDB Atlas.
+The project started as a NestJS + React application and was extended with a real AWS-based deployment workflow using Terraform, Docker, ECR, ECS Fargate, an Application Load Balancer, and MongoDB Atlas.
 
 It demonstrates:
 
@@ -18,7 +18,7 @@ It demonstrates:
 - Dockerized local development
 - Production-style container images
 - Terraform-managed AWS infrastructure
-- Kubernetes deployment on Amazon EKS
+- Modular, ephemeral ECS Fargate demo infrastructure
 - MongoDB Atlas managed database integration
 - Cost-conscious cloud infrastructure lifecycle
 
@@ -39,10 +39,8 @@ It demonstrates:
 - Docker
 - Docker Compose
 - AWS ECR
-- AWS EKS
-- Kubernetes
+- AWS ECS Fargate
 - AWS Application Load Balancer
-- AWS Load Balancer Controller
 - Terraform
 - Terraform remote state in S3
 - MongoDB Atlas Terraform provider
@@ -124,41 +122,15 @@ MongoDB container
 
 ---
 
-## Cloud Architecture (Previously Implemented)
-
-This diagram describes the AWS/Kubernetes architecture built earlier in this project. It is not a currently verified live environment — see [Infrastructure Status](#infrastructure-status) below.
-
-```text
-Browser
-  ↓
-AWS Application Load Balancer
-  ↓
-Kubernetes Ingress
-  ↓
-Frontend Service / nginx
-  ↓
-/api proxy
-  ↓
-Backend Service
-  ↓
-NestJS Backend Pod
-  ↓
-MongoDB Atlas
-```
-
-Full resource-level documentation of that earlier architecture (VPC, EKS, ECR, Kubernetes workloads, MongoDB Atlas integration) is preserved in the pre-modularization baseline tag `infra-v1-pre-modularization` (e.g. `git show infra-v1-pre-modularization:infra/terraform/README.md`).
-
----
-
 ## Infrastructure Status
 
-This project previously included a Terraform-managed AWS deployment (VPC, EKS cluster and node group, ECR, AWS Load Balancer Controller, Kubernetes workloads) and a MongoDB Atlas integration. That earlier setup is preserved in the baseline tag `infra-v1-pre-modularization`; the infrastructure is now being rebuilt as a modular ECS Fargate design — see [`docs/infrastructure-modularization-spec.md`](docs/infrastructure-modularization-spec.md) and `infra/terraform/README.md`.
+The earlier AWS deployment of this project is preserved in the baseline tag `infra-v1-pre-modularization` (e.g. `git show infra-v1-pre-modularization:infra/terraform/README.md`); the infrastructure is now designed as a modular ECS Fargate architecture — see [`docs/infrastructure-modularization-spec.md`](docs/infrastructure-modularization-spec.md) and `infra/terraform/README.md`.
 
 **Current status:**
 
-- The Terraform remote-state S3 bucket that previously tracked this infrastructure has been deleted.
+- The current Terraform remote-state backend exists in AWS S3. Its retirement is tracked by issue #209.
+- The demo infrastructure (foundation, data and ECS resources) is currently **not provisioned**; ECS Fargate + ALB is the implemented Terraform target architecture, not a running environment.
 - The AWS infrastructure is currently being reviewed and redesigned.
-- Without reconciled state, `terraform plan` may not correctly represent Terraform's ownership and mapping of existing AWS resources.
 
 This README intentionally does not include Terraform `apply`, `destroy`, or deployment instructions. The redesign is specified in [`docs/infrastructure-modularization-spec.md`](docs/infrastructure-modularization-spec.md).
 
@@ -170,7 +142,7 @@ The full pre-modularization repository state — the old monolithic Terraform co
   `git worktree add --detach ../itassetpulse-baseline infra-v1-pre-modularization`
 - View a single file directly, e.g. `git show infra-v1-pre-modularization:infra/terraform/main.tf`.
 
-The new modular infrastructure starts from **clean Terraform state**. The previous local state is not a valid starting point: the remote-state S3 bucket was deleted, the old bootstrap local state only describes that deleted bucket, and the main stack kept its state remotely (now gone).
+The new modular infrastructure starts from **clean Terraform state**. The previous local state is not a valid starting point: the old remote-state S3 bucket was deleted, the old bootstrap local state only describes that deleted bucket, and the main stack kept its state remotely (now gone).
 
 Local, git-ignored Terraform artifacts (`terraform.tfvars`, `backend.hcl`, bootstrap state files, and `.terraform/` provider caches) are kept out of Git and are not reused by the redesign. Reference values that may still be needed are backed up only to an out-of-repo, user-controlled location; the provider caches are not backed up (they are regenerated by `terraform init`).
 
@@ -178,12 +150,12 @@ Local, git-ignored Terraform artifacts (`terraform.tfvars`, `backend.hcl`, boots
 
 ## CI/CD
 
-This project uses GitHub Actions for CI and deployment:
+- GitHub Actions performs validation only: backend and frontend lint, test and build, plus AWS-free Terraform format, init and validate checks on pull requests and pushes to `main`.
+- A transitional, manually dispatched image-publishing workflow builds the backend and frontend images and pushes them to Amazon ECR under immutable full-SHA tags.
+- **No workflow currently deploys to AWS.** ECS infrastructure and service rollout are Terraform-owned and executed manually from a reviewed saved plan.
+- A Jenkins-based replacement for the release and Terraform execution path is planned, not implemented.
 
-- The CI workflow validates that the backend and frontend build successfully on pull requests and on pushes to `main`.
-- The deploy workflow builds Docker images, pushes them to Amazon ECR, and restarts the existing Kubernetes deployments in EKS.
-
-The deploy workflow's target AWS/EKS environment is not currently verified as live — see [Infrastructure Status](#infrastructure-status) above. Full details: `docs/ci-cd.md`.
+Full details: [`docs/ci-cd.md`](docs/ci-cd.md).
 
 ---
 
@@ -194,18 +166,18 @@ The deploy workflow's target AWS/EKS environment is not currently verified as li
 - Dockerized local development
 - Production-style backend and frontend Docker images
 - JWT authentication and role-based access control
-- GitHub Actions CI (build validation) and deploy workflow (ECR + EKS rollout)
+- GitHub Actions CI (lint, test, build and Terraform validation)
+- Transitional manual image publishing to Amazon ECR
 
-**Infrastructure** (previously implemented, pending redesign — see [Infrastructure Status](#infrastructure-status)):
+**Infrastructure** (implemented in Terraform, currently not provisioned — see [Infrastructure Status](#infrastructure-status)):
 
-- Terraform-managed AWS networking, ECR, EKS cluster and node group, EKS addons, AWS Load Balancer Controller
-- Kubernetes application deployment and ALB ingress
+- Modular Terraform roots for networking, ECR, MongoDB Atlas, and the ECS Fargate + ALB demo stack
 - MongoDB Atlas database access managed by Terraform
 
 **Planned:**
 
-- AWS infrastructure review and redesign
-- Updated Terraform documentation
+- Full rebuild of the demo environment
+- Jenkins-based release and Terraform execution
 - Basic monitoring and automation
 
 ---
@@ -218,8 +190,8 @@ Sensitive values are stored in:
 
 - Local `.env` files for local development
 - Local `terraform.tfvars` for Terraform
-- Kubernetes Secrets for EKS deployment
-- GitHub Secrets for CI/CD deployment credentials
+- AWS Secrets Manager for the application's database credentials
+- GitHub Actions secrets and variables for CI/CD configuration
 
 Terraform remote state must be treated as sensitive because it can contain secret values.
 
@@ -234,7 +206,7 @@ It shows practical experience with:
 - Docker
 - AWS
 - Terraform
-- Kubernetes / EKS
+- ECS Fargate
 - ECR
 - MongoDB Atlas
 - Infrastructure as Code
