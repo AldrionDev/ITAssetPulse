@@ -132,5 +132,6 @@ no effect on a running environment.
 ## References
 
 - Target architecture and design of record: [`infrastructure-modularization-spec.md`](./infrastructure-modularization-spec.md)
+- Planned HCP Terraform and local Jenkins architecture (not yet implemented): [`infrastructure-hcp-jenkins-spec.md`](./infrastructure-hcp-jenkins-spec.md)
 - Apply / demo / destroy procedure: [`runbooks/ephemeral-demo-lifecycle.md`](./runbooks/ephemeral-demo-lifecycle.md)
 - Terraform stack layout, state keys and CI job mapping: [`../infra/terraform/README.md`](../infra/terraform/README.md)
