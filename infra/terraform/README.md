@@ -3,13 +3,15 @@
 Modular Terraform for the ITAssetPulse ephemeral demo. Design of record:
 [`docs/infrastructure-modularization-spec.md`](../../docs/infrastructure-modularization-spec.md).
 
-> The S3 remote-state backend and apply model described below are planned to migrate to HCP Terraform and a
-> local Jenkins execution model. See
+> The S3 remote-state backend and apply model described below are being migrated to HCP Terraform and a local
+> Jenkins execution model; see
 > [`docs/infrastructure-hcp-jenkins-spec.md`](../../docs/infrastructure-hcp-jenkins-spec.md) for the planned
-> target architecture. The HCP Terraform project and four workspaces listed below have been created and
-> verified empty (#202) — see
-> [`docs/runbooks/hcp-terraform-workspaces.md`](../../docs/runbooks/hcp-terraform-workspaces.md). No Terraform
-> state has been migrated onto them yet; the state-key table in this file is still authoritative until #203.
+> target architecture. That broader migration is still in progress.
+>
+> The HCP Terraform project and its four workspaces listed below have been created and verified empty (#202)
+> — see [`docs/runbooks/hcp-terraform-workspaces.md`](../../docs/runbooks/hcp-terraform-workspaces.md). No
+> Terraform state has been migrated onto them yet: the S3 backend and the state-key table below remain
+> authoritative until #203.
 
 > **The modular Terraform roots are implemented. The `foundation`, `data` and ECS demo resources are currently
 > not provisioned in AWS. Any future mutation requires a reviewed saved plan and explicit approval.**

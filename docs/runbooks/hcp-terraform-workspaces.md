@@ -95,11 +95,20 @@ implicitly shares state with the rest of the organization.
 
 This was configured via the HCP Terraform API's
 `POST /workspaces/:id/relationships/remote-state-consumers` endpoint,
-which grants access to explicitly named workspaces. This is preference #1
-of the three options in spec §10 (specific workspaces → project-wide →
-organization-wide) — it worked on the first attempt on the `free_standard`
-plan, so **no broader (project-wide or organization-wide) sharing was
-ever enabled**, and no fallback was necessary.
+which grants access to explicitly named workspaces — the narrowest of
+the three options in spec §10 (specific workspaces → project-wide →
+organization-wide), selected as the least-permissive one available on
+the `free_standard` plan.
+
+Two of the initial requests were malformed: an unquoted shell variable
+in the request loop word-split, so the request body carried an empty
+consumer workspace ID instead of `itassetpulse-ecs`'s actual ID. Both
+malformed requests returned successfully but created no consumer
+relationship. The requests were repeated with the consumer workspace ID
+passed explicitly (no shell interpolation), which produced the
+relationships shown in the table above. The final sharing matrix was
+verified read-only afterwards (see below); **no broader (project-wide or
+organization-wide) sharing fallback was ever enabled**.
 
 Verified read-only afterwards: `GET /workspaces/:id/relationships/remote-state-consumers`
 on each of the three producers returns exactly `itassetpulse-ecs`; the
@@ -140,12 +149,17 @@ same call on `itassetpulse-ecs` returns an empty list.
 ## 7. Verification procedure
 
 All checks below are read-only against the HCP Terraform API, using the
-locally stored credential; none of them prints the token itself.
+locally stored credential. `<token>` is a placeholder throughout — the
+real token must never be placed in shell history, command-line/process
+arguments, or command output. Read it with a safe local helper instead
+(for example, a shell function that pipes `credentials.tfrc.json`
+straight into `jq` and exports the result to an environment variable
+without echoing it), and never `cat` or otherwise print
+`~/.terraform.d/credentials.tfrc.json` itself.
 
 ```bash
 # Organization reachable with this token (name only)
-curl -s --header "Authorization: Bearer $(jq -r '.credentials["app.terraform.io"].token' ~/.terraform.d/credentials.tfrc.json)" \
-  --header "Accept: application/vnd.api+json" \
+curl -s --header "Authorization: Bearer <token>" --header "Accept: application/vnd.api+json" \
   https://app.terraform.io/api/v2/organizations | jq -r '.data[].attributes.name'
 
 # Exactly four workspaces in the ITAssetPulse project
