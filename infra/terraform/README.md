@@ -6,7 +6,10 @@ Modular Terraform for the ITAssetPulse ephemeral demo. Design of record:
 > The S3 remote-state backend and apply model described below are planned to migrate to HCP Terraform and a
 > local Jenkins execution model. See
 > [`docs/infrastructure-hcp-jenkins-spec.md`](../../docs/infrastructure-hcp-jenkins-spec.md) for the planned
-> target architecture — not yet implemented.
+> target architecture. The HCP Terraform project and four workspaces listed below have been created and
+> verified empty (#202) — see
+> [`docs/runbooks/hcp-terraform-workspaces.md`](../../docs/runbooks/hcp-terraform-workspaces.md). No Terraform
+> state has been migrated onto them yet; the state-key table in this file is still authoritative until #203.
 
 > **The modular Terraform roots are implemented. The `foundation`, `data` and ECS demo resources are currently
 > not provisioned in AWS. Any future mutation requires a reviewed saved plan and explicit approval.**
@@ -45,6 +48,19 @@ via its own `backend.hcl` (partial backend config):
 | `data` | remote | `itassetpulse/demo/data.tfstate` |
 | `ecs` | remote | `itassetpulse/demo/ecs.tfstate` |
 | `eks` (later) | remote | `itassetpulse/demo/eks.tfstate` |
+
+## HCP Terraform workspace inventory (empty, prepared by #202)
+
+| Stack | HCP workspace | Execution mode |
+|-------|---------------|----------------|
+| `account` | `itassetpulse-account` | Local (CLI-driven) |
+| `foundation` | `itassetpulse-foundation` | Local (CLI-driven) |
+| `data` | `itassetpulse-data` | Local (CLI-driven) |
+| `ecs` | `itassetpulse-ecs` | Local (CLI-driven) |
+
+See [`docs/runbooks/hcp-terraform-workspaces.md`](../../docs/runbooks/hcp-terraform-workspaces.md) for the
+project, remote-state-sharing configuration and token lifecycle. State migration onto these workspaces is
+#203.
 
 ## Environment convention
 
