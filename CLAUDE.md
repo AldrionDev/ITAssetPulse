@@ -6,7 +6,7 @@ This repository contains two independent Node.js packages and infrastructure cod
 
 - `backend/` — NestJS, TypeScript, Mongoose, MongoDB
 - `frontend/` — React, TypeScript, Vite, Tailwind CSS
-- `infra/terraform/` — AWS, EKS, ECR, networking, and MongoDB Atlas infrastructure
+- `infra/terraform/` — AWS, ECS Fargate, ECR, ALB, networking, and MongoDB Atlas infrastructure
 
 ## Commands
 
