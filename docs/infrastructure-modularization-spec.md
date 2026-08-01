@@ -121,6 +121,11 @@ Five active stacks (`bootstrap`, `account`, `foundation`, `data`, `ecs`) plus a 
 
 ### 4.1 `bootstrap` — local state, one-time, persistent
 
+> **Superseded by the planned target model.** The AWS S3 state backend described in this section is planned to
+> be replaced by HCP Terraform state storage, and `bootstrap` is planned to be retired rather than migrated.
+> See [`infrastructure-hcp-jenkins-spec.md`](./infrastructure-hcp-jenkins-spec.md) for the target model. This
+> section remains accurate for the **current** implementation.
+
 Creates **only** the Terraform remote-state infrastructure:
 
 - S3 bucket for remote state, with versioning and server-side encryption (SSE-S3 / AES256).
@@ -330,6 +335,12 @@ lookup, release-SHA selection, JWT secret, alarms, dashboard, SNS wiring) stays 
 
 ## 6. State keys and dependency graph
 
+> **Superseded by the planned target model.** The S3 state keys below are planned to be replaced by HCP
+> Terraform workspaces (`itassetpulse-account`, `itassetpulse-foundation`, `itassetpulse-data`,
+> `itassetpulse-ecs`), one per remote-state root. See
+> [`infrastructure-hcp-jenkins-spec.md`](./infrastructure-hcp-jenkins-spec.md). The dependency graph itself
+> (which stack reads which other stack's outputs) is unaffected by the backend change and remains accurate.
+
 State bucket and locking are created by `bootstrap` (local state). All other stacks use the S3 backend with a
 distinct key configured through a per-stack `backend.hcl`.
 
@@ -468,6 +479,11 @@ Single declarative owner: **Terraform owns the ECS task definitions and service 
 
 ### 10.1 Image publishing — `publish-images.yml`
 
+> **Superseded by the planned target model.** GitHub OIDC-based publishing described below is planned to be
+> replaced by a Jenkins release pipeline authenticating through a project-specific IAM role. See
+> [`infrastructure-hcp-jenkins-spec.md`](./infrastructure-hcp-jenkins-spec.md). This section remains accurate
+> for the **current, transitional** implementation.
+
 - Manual `workflow_dispatch` GitHub Actions workflow.
 - Authenticates to AWS via **GitHub OIDC** (assumes the `account` publish role). No long-lived AWS access-key
   GitHub secrets.
@@ -576,6 +592,12 @@ No existing business API route or global route prefix is changed. The only new b
 ---
 
 ## 13. Apply / destroy order and preflight
+
+> **Superseded by the planned target model.** The OIDC preflight check in §13.1 and the apply order in §13.2
+> are planned to change once Terraform execution moves to HCP Terraform (Local execution mode) and Jenkins,
+> and the GitHub OIDC dependency is removed. See
+> [`infrastructure-hcp-jenkins-spec.md`](./infrastructure-hcp-jenkins-spec.md). This section remains accurate
+> for the **current** apply model.
 
 ### 13.1 Shared-account preflight (read-only, before the `account` stack)
 

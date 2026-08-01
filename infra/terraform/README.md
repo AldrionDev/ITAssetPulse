@@ -3,6 +3,11 @@
 Modular Terraform for the ITAssetPulse ephemeral demo. Design of record:
 [`docs/infrastructure-modularization-spec.md`](../../docs/infrastructure-modularization-spec.md).
 
+> The S3 remote-state backend and apply model described below are planned to migrate to HCP Terraform and a
+> local Jenkins execution model. See
+> [`docs/infrastructure-hcp-jenkins-spec.md`](../../docs/infrastructure-hcp-jenkins-spec.md) for the planned
+> target architecture — not yet implemented.
+
 > **The modular Terraform roots are implemented. The `foundation`, `data` and ECS demo resources are currently
 > not provisioned in AWS. Any future mutation requires a reviewed saved plan and explicit approval.**
 
