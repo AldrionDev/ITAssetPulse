@@ -1,7 +1,0 @@
-# foundation — S3 remote backend (partial config).
-# Copy to backend.hcl (git-ignored) and set the bucket created by the bootstrap stack.
-bucket       = "<your-terraform-state-bucket>"
-key          = "itassetpulse/demo/foundation.tfstate"
-region       = "<your-aws-region>"
-encrypt      = true
-use_lockfile = true
