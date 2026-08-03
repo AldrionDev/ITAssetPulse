@@ -27,11 +27,6 @@ variable "aws_region" {
   default     = "eu-north-1"
 }
 
-variable "state_bucket" {
-  description = "Name of the S3 bucket created by the bootstrap stack, used to read the foundation and data stacks' remote state. Contains the AWS account ID, so it is never hardcoded or defaulted here (spec §8)."
-  type        = string
-}
-
 variable "release_sha" {
   description = "Full Git commit SHA of the backend/frontend images published by publish-images.yml. Used as the ECR image_tag for the digest lookup; no fallback tag is accepted."
   type        = string
