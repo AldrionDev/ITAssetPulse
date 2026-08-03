@@ -54,8 +54,9 @@ architecture, which remains specified in
   and ownership can change outside this repository at any time.
 - ECS Fargate + ALB is the **implemented Terraform target architecture** — the code exists — but the
   `foundation`, `data` and `ecs` demo resources are **currently not provisioned** in AWS.
-- Neither Jenkins nor HCP Terraform exists in any form today: no `ci/jenkins/` directory, no `cloud {}` block
-  in any Terraform root, no HCP workspace, token or runbook.
+- The HCP Terraform project and four Local execution workspaces were created under #202. Terraform state migration remains owned by #203.
+- The reusable local Jenkins controller is implemented in the separate `AldrionDev/local-jenkins-platform` repository. ITAssetPulse-specific integration documentation is implemented under #204.
+- No ITAssetPulse Jenkins pipeline has been implemented yet; image publishing remains #206 and manually approved Terraform execution remains #208.
 
 ### Known limitation this milestone addresses
 
@@ -87,12 +88,12 @@ consequences for the target design:
 
 **Status: PLANNED**
 
-| System | Stores / does |
-|---|---|
-| GitHub | Source code, Terraform configuration, Dockerfiles, Jenkins pipeline definitions, documentation. No AWS credential, no HCP token. |
-| HCP Terraform | Terraform state and state history for every remote-state root. Local execution mode only — it never runs `plan` or `apply` itself. |
+| System                     | Stores / does                                                                                                                                                                          |
+| -------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| GitHub                     | Source code, Terraform configuration, Dockerfiles, Jenkins pipeline definitions, documentation. No AWS credential, no HCP token.                                                       |
+| HCP Terraform              | Terraform state and state history for every remote-state root. Local execution mode only — it never runs `plan` or `apply` itself.                                                     |
 | Local Docker-based Jenkins | Release builds (image publishing to ECR) and, later, manually approved Terraform saved-plan execution. Holds the only long-lived AWS-facing credential, in its local credential store. |
-| AWS | Runtime resources only (network, ECR, ECS, ALB, Secrets Manager, the project-specific IAM roles Jenkins assumes). Reproducible entirely from GitHub + HCP Terraform + Jenkins. |
+| AWS                        | Runtime resources only (network, ECR, ECS, ALB, Secrets Manager, the project-specific IAM roles Jenkins assumes). Reproducible entirely from GitHub + HCP Terraform + Jenkins.         |
 
 ---
 
@@ -111,20 +112,20 @@ consequences for the target design:
 
 ## 6. HCP Terraform responsibilities
 
-**Status: PLANNED**
+**Status: CURRENT (project and workspaces) / PLANNED (state migration and Jenkins use)**
 
-- Stores the Terraform state and full state history for every active remote-state root (`account`,
-  `foundation`, `data`, `ecs`), replacing the AWS S3 backend for those roots.
+- Will store the Terraform state and full state history for every active remote-state root (`account`,
+  `foundation`, `data`, `ecs`) after #203 replaces the AWS S3 backend.
 - Does **not** execute Terraform runs. Every workspace uses Local execution mode (§7).
-- Provides the authentication surface (`terraform login` / `TF_TOKEN_app_terraform_io`) used locally and, once
-  #204/#208 land, from Jenkins.
+- Provides the authentication surface (`terraform login` / `TF_TOKEN_app_terraform_io`) used locally and,
+  once #208 lands, from Jenkins.
 - Enforces state-sharing between workspaces on a least-privilege basis (§10).
 
 ---
 
 ## 7. Local execution mode
 
-**Status: PLANNED**
+**Status: CURRENT (workspace mode) / PLANNED (state migration and Jenkins execution)**
 
 Every HCP Terraform workspace ITAssetPulse uses runs in **Local execution mode**, not Remote or Agent
 execution:
@@ -139,16 +140,16 @@ execution:
 
 ## 8. HCP project and workspace mapping
 
-**Status: PLANNED**
+**Status: CURRENT**
 
-| HCP object | Value |
-|---|---|
-| Organization | Existing HCP Terraform organization (chosen at #202 implementation time) |
-| Project | `ITAssetPulse` |
-| Workspace | `itassetpulse-account` |
-| Workspace | `itassetpulse-foundation` |
-| Workspace | `itassetpulse-data` |
-| Workspace | `itassetpulse-ecs` |
+| HCP object   | Value                         |
+| ------------ | ----------------------------- |
+| Organization | `gabor-toth-personalprojects` |
+| Project      | `ITAssetPulse`                |
+| Workspace    | `itassetpulse-account`        |
+| Workspace    | `itassetpulse-foundation`     |
+| Workspace    | `itassetpulse-data`           |
+| Workspace    | `itassetpulse-ecs`            |
 
 All four workspaces are **CLI-driven** (not VCS-driven) and run in **Local execution mode**. No `bootstrap`
 workspace is created — the `bootstrap` stack is not migrated (§9).
@@ -159,13 +160,13 @@ workspace is created — the `bootstrap` stack is not migrated (§9).
 
 **Status: PLANNED (target) / CURRENT (starting point)**
 
-| Root | Current state | Target state | Notes |
-|---|---|---|---|
-| `bootstrap` | Local state, 5 resources | **Not migrated** | Retired by #209 once HCP Terraform is proven; its only responsibility (the S3 state bucket) becomes obsolete. |
-| `account` | S3, 6 managed resources | `itassetpulse-account` | The **only** currently non-empty remote state — the only root requiring a real state migration (#203). |
-| `foundation` | S3, empty (0 resources) | `itassetpulse-foundation` | Clean re-init against the new workspace; nothing to move. |
-| `data` | S3, empty (0 resources) | `itassetpulse-data` | Clean re-init against the new workspace; nothing to move. |
-| `ecs` | S3, empty (0 resources) | `itassetpulse-ecs` | Clean re-init against the new workspace; nothing to move. |
+| Root         | Current state            | Target state              | Notes                                                                                                         |
+| ------------ | ------------------------ | ------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `bootstrap`  | Local state, 5 resources | **Not migrated**          | Retired by #209 once HCP Terraform is proven; its only responsibility (the S3 state bucket) becomes obsolete. |
+| `account`    | S3, 6 managed resources  | `itassetpulse-account`    | The **only** currently non-empty remote state — the only root requiring a real state migration (#203).        |
+| `foundation` | S3, empty (0 resources)  | `itassetpulse-foundation` | Clean re-init against the new workspace; nothing to move.                                                     |
+| `data`       | S3, empty (0 resources)  | `itassetpulse-data`       | Clean re-init against the new workspace; nothing to move.                                                     |
+| `ecs`        | S3, empty (0 resources)  | `itassetpulse-ecs`        | Clean re-init against the new workspace; nothing to move.                                                     |
 
 `ecs` reads outputs from `account` (SNS topic ARN, observability increment), `foundation` (VPC/ECR outputs)
 and `data` (Secrets Manager secret ARN) via `terraform_remote_state`, matching the dependency graph in
@@ -177,56 +178,76 @@ of an S3 key.
 
 ## 10. State sharing and least-privilege rules
 
-**Status: PLANNED**
+**Status: CURRENT**
 
-By default, a new HCP Terraform workspace shares its state with no other workspace. `itassetpulse-ecs` needs
-read access to `itassetpulse-account`, `itassetpulse-foundation` and `itassetpulse-data`. The chosen option
-must be the **narrowest available**, in this order of preference:
+Least-privilege state sharing was configured under #202:
 
-1. Share with **specific named workspaces** (`itassetpulse-ecs` explicitly) — preferred.
-2. Share with **all workspaces in the `ITAssetPulse` project** — only if per-workspace sharing is unavailable.
-3. Share with **all workspaces in the organization** — **fallback only**, permitted solely when neither
-   narrower option exists, and only with the choice and its reason recorded in the resulting runbook
-   (`docs/runbooks/hcp-terraform-workspaces.md`, created by #202).
+- `itassetpulse-account` shares state only with `itassetpulse-ecs`;
+- `itassetpulse-foundation` shares state only with `itassetpulse-ecs`;
+- `itassetpulse-data` shares state only with `itassetpulse-ecs`;
+- `itassetpulse-ecs` shares its state with no workspace.
 
-No workspace shares state in the reverse direction: `itassetpulse-ecs` shares its own state with nothing.
+No workspace uses project-wide or organization-wide state sharing.
+
+This gives the `ecs` root access only to the upstream outputs it requires while preventing reverse or
+unrelated workspace access.
 
 ---
 
 ## 11. Local Docker-based Jenkins model
 
-**Status: PLANNED**
+**Status: CURRENT (controller platform) / PLANNED (project pipelines)**
 
-- Runs via Docker Compose on the developer's own local machine, under a new `ci/jenkins/` directory at the
-  repository root (separate from `.github/` and `infra/terraform/`).
-- The Jenkins UI is bound to `127.0.0.1:8080` only — never published on a non-loopback interface.
-- The Jenkins home volume is persistent (a named Docker volume), so configuration and job history survive
-  container restarts.
-- The container runs with `restart: unless-stopped`.
-- Job execution is **manual only** in v1: no webhook, no SCM polling, no scheduled trigger.
-- No Kubernetes or cloud-based build agents; no Jenkins shared library; no multi-project abstraction layer.
-  `ci/jenkins/` is self-contained enough to be reused by another personal project later, but that reuse is a
-  future direction, not current scope.
-- Building container images requires Docker inside the pipeline; the accepted v1 approach mounts the host
-  `/var/run/docker.sock` into the Jenkins container. This grants the container effectively host-root-equivalent
-  access. For a single-user, localhost-only Jenkins this is an accepted trade-off (§21), to be documented
-  explicitly in `ci/jenkins/README.md` alongside the Docker-in-Docker alternative and its cost.
+The reusable Jenkins controller is maintained outside this repository in:
+
+```text
+AldrionDev/local-jenkins-platform
+```
+
+The external platform repository owns:
+
+- the Docker Compose-based Jenkins controller;
+- the custom Jenkins image and pinned plugin versions;
+- Jenkins Configuration as Code;
+- persistent `JENKINS_HOME`;
+- localhost-only access on `127.0.0.1:8080`;
+- Docker CLI, Docker Compose and Docker Buildx integration;
+- startup, shutdown, status, backup and restore procedures;
+- controller-level security documentation.
+
+The controller has no published inbound agent port and requires no public URL, webhook, SCM polling or scheduled trigger.
+
+ITAssetPulse does not contain a second Jenkins controller. Its `ci/jenkins/` directory contains only project-specific integration documentation and, under their owning follow-up issues, project-specific pipeline definitions.
+
+The responsibility boundary is:
+
+- `local-jenkins-platform` owns the reusable controller;
+- ITAssetPulse owns its job names, credential IDs, AWS role references and Jenkinsfiles;
+- #206 owns the ECR image-publishing pipeline;
+- #208 owns the manually approved Terraform pipeline.
+
+Building container images uses the host Docker daemon through `/var/run/docker.sock`. This grants Jenkins jobs effectively host-root-equivalent access and is an explicitly accepted trade-off for a trusted, single-user, localhost-only development environment. The detailed risk and operational protections are documented in the external platform repository.
+
+The controller is designed to support another trusted personal project later without copying or duplicating the Jenkins platform configuration.
 
 ---
 
 ## 12. Daily PC startup and shutdown behavior
 
-**Status: PLANNED**
+**Status: CURRENT (configuration and manual operation) / PLANNED (host-restart verification)**
 
 Powering the developer's PC down and up daily is an explicitly **accepted, supported** operating model, not a
 limitation to work around:
 
-- `restart: unless-stopped` combined with the persistent Jenkins home volume means Jenkins comes back
-  automatically after a host power cycle, with its configuration and credentials intact.
-- Shutting down the PC stops Jenkins. It does **not** stop, modify or otherwise affect any running AWS runtime
-  resource, and it does not affect HCP Terraform state, which lives outside the local machine.
-- No always-on assumption is made anywhere in the design: no scheduled job depends on Jenkins being reachable
-  at a particular time, and no external system polls or webhooks into it.
+- Persistent `JENKINS_HOME` preserves Jenkins configuration, credentials and build history across container
+  recreation and host restarts.
+- If Jenkins was running before the PC shut down and Docker starts after boot, `restart: unless-stopped`
+  restarts the controller automatically.
+- If Jenkins was explicitly stopped with `./scripts/stop.sh`, it remains stopped and must be started manually
+  with `./scripts/start.sh`.
+- Shutting down the PC does not stop, modify or otherwise affect running AWS resources, HCP Terraform state,
+  Git repositories or already-published ECR images.
+- No scheduled job, webhook or external poller depends on Jenkins being continuously available.
 
 ---
 
@@ -331,8 +352,7 @@ exact saved plan, gated by an explicit human approval.**
 - No AWS credential of any kind is stored in GitHub (repository, organization, or Actions secrets/variables)
   once #207 completes.
 - No HCP Terraform token is stored in GitHub.
-- No credential value appears in any Jenkinsfile, `ci/jenkins/casc/jenkins.yaml`, or other repository file —
-  only credential **IDs** referencing entries in the Jenkins credential store.
+- No credential value appears in any Jenkinsfile, the external platform's `casc/jenkins.yaml`, or any other repository file — only credential IDs referencing entries in the local Jenkins credential store.
 - No Terraform state is committed to Git at any point; state lives exclusively in HCP Terraform.
 - The HCP Terraform token used locally lives only in `~/.terraform.d/credentials.tfrc.json`; the token used by
   Jenkins lives only in the Jenkins credential store.
@@ -382,20 +402,15 @@ and the full AWS-clear rebuild sequence — is written and evidenced in #210, no
 
 ## 21. Security trade-offs
 
-**Status: PLANNED (accepted trade-offs for this milestone)**
+**Status: CURRENT (controller protections) / PLANNED (AWS identity model)**
 
-- **Long-lived local source credential vs. short-lived OIDC tokens.** Moving away from GitHub Actions OIDC
-  trades short-lived, keyless tokens for a Jenkins source principal with longer-lived credentials, held only
-  in the local Jenkins credential store. This is accepted because the alternative — continuing to depend on a
-  shared, account-global OIDC provider this project does not own — has already proven unstable in practice.
-- **Docker socket access.** Mounting `/var/run/docker.sock` into the Jenkins container grants it
-  host-root-equivalent access on the local machine. Accepted for a single-user, localhost-only Jenkins; the
-  Docker-in-Docker alternative and its cost are documented in `ci/jenkins/README.md` (#204).
-- **Localhost-only exposure.** Jenkins is never reachable outside the local machine — no public URL, no
-  webhook, no inbound network exposure — which removes an entire class of remote-attack surface at the cost of
-  requiring the developer's own machine to be running for any release or Terraform execution.
-- **Assumed-role sessions remain short-lived** (one hour) regardless of how long the Jenkins source credential
-  itself lives, bounding the blast radius of a compromised session.
+- **Long-lived local source credential vs. short-lived OIDC tokens.** Moving away from GitHub Actions OIDC trades short-lived, keyless tokens for a Jenkins source principal with longer-lived credentials, held only in the local Jenkins credential store. This is accepted because the alternative — continuing to depend on a shared, account-global OIDC provider this project does not own — has already proven unstable in practice. The source principal and project-specific IAM roles remain owned by #205.
+
+- **Docker socket access.** Mounting `/var/run/docker.sock` into the Jenkins controller grants Jenkins jobs effectively host-root-equivalent access to the local machine. This is an accepted trade-off for a trusted, single-user, localhost-only Jenkins platform. The controller remains non-root, receives Docker access through the host socket group ID, disables anonymous access and accepts only trusted repositories and Jenkinsfiles. The detailed risk and operational protections are documented in the external `AldrionDev/local-jenkins-platform` repository.
+
+- **Localhost-only exposure.** Jenkins is reachable only through `127.0.0.1:8080`. It has no public URL, webhook, SCM polling, scheduled trigger or published inbound agent port. This removes external network exposure at the cost of requiring the developer's workstation to be running while jobs are executed.
+
+- **Assumed-role sessions remain short-lived.** Once #205 implements the Jenkins AWS identity model, assumed-role sessions remain limited to one hour regardless of how long the local source credential exists, bounding the blast radius of a compromised session.
 
 ---
 
@@ -426,8 +441,7 @@ target end state, not the step-by-step execution.
 
 - A public Jenkins URL, GitHub webhooks, scheduled builds, or any inbound network exposure for Jenkins.
 - Kubernetes or dynamic cloud-based Jenkins agents.
-- A Jenkins shared library or a generic multi-project tooling layer — `ci/jenkins/` is self-contained but not
-  abstracted for reuse in this milestone.
+- A Jenkins shared library or generic multi-project pipeline framework. The external controller may support other trusted projects, while each project keeps its own pipeline definitions and credentials.
 - Automatic or unattended `terraform apply` under any condition.
 - Any `terraform destroy` pipeline in Jenkins.
 - Application feature changes or a redesign of the ECS Fargate + ALB target architecture beyond the state
@@ -441,22 +455,22 @@ target end state, not the step-by-step execution.
 
 **Status: reference table**
 
-| Area | Issue |
-|---|---|
-| Architecture specification (this document) | #201 |
-| HCP Terraform project and workspace preparation | #202 |
-| Terraform state migration | #203 |
-| Local Docker-based Jenkins platform | #204 |
-| Project-specific Jenkins AWS IAM roles | #205 |
-| Jenkins ECR image-publishing pipeline | #206 |
-| GitHub Actions OIDC dependency removal | #207 |
-| Jenkins manually approved Terraform pipeline | #208 |
-| Full demo environment rebuild | #200 |
-| Legacy S3 backend and `bootstrap` retirement | #209 |
-| Disaster-recovery runbook | #210 |
+| Area                                            | Issue |
+| ----------------------------------------------- | ----- |
+| Architecture specification (this document)      | #201  |
+| HCP Terraform project and workspace preparation | #202  |
+| Terraform state migration                       | #203  |
+| Local Docker-based Jenkins platform             | #204  |
+| Project-specific Jenkins AWS IAM roles          | #205  |
+| Jenkins ECR image-publishing pipeline           | #206  |
+| GitHub Actions OIDC dependency removal          | #207  |
+| Jenkins manually approved Terraform pipeline    | #208  |
+| Full demo environment rebuild                   | #200  |
+| Legacy S3 backend and `bootstrap` retirement    | #209  |
+| Disaster-recovery runbook                       | #210  |
 
-No issue's implementation is claimed complete by this document. Each row above names the issue that owns the
-corresponding implementation; this specification only records the agreed target architecture.
+The table records implementation ownership. Completed and current capabilities are summarized in §25, while
+unfinished work remains owned by the referenced follow-up issues.
 
 ---
 
@@ -464,15 +478,32 @@ corresponding implementation; this specification only records the agreed target 
 
 **Status: CURRENT**
 
-As of this document:
+At the completion of issue #204:
 
-- Terraform state for `account`, `foundation`, `data` and `ecs` is in AWS S3, owned by `bootstrap`.
-- GitHub Actions CI (`ci.yml`) is AWS-credential-free.
-- `publish-images.yml` is transitional and depends on the shared, unstable GitHub OIDC provider.
-- ECS Fargate + ALB is the implemented Terraform target architecture; the `foundation`, `data` and `ecs` demo
-  resources are currently **not provisioned**.
-- No `cloud {}` block, HCP workspace, HCP token, or HCP runbook exists anywhere in the repository.
-- No `ci/jenkins/` directory, `Jenkinsfile`, JCasC configuration, or Jenkins credential configuration exists.
+- Terraform state for `account`, `foundation`, `data` and `ecs` remains in the AWS S3 backend owned by `bootstrap`. Migration to HCP Terraform remains owned by #203.
+- The HCP Terraform project and four CLI-driven Local execution workspaces were created and verified under #202:
+  - `itassetpulse-account`;
+  - `itassetpulse-foundation`;
+  - `itassetpulse-data`;
+  - `itassetpulse-ecs`.
 
-Nothing described as **PLANNED** in this document has been implemented yet. Each planned item is implemented,
-verified and evidenced by the issue named in §24.
+- Least-privilege state sharing is configured from `itassetpulse-account`, `itassetpulse-foundation` and `itassetpulse-data` to `itassetpulse-ecs`. The `itassetpulse-ecs` workspace shares its state with no workspace.
+- GitHub Actions CI (`ci.yml`) remains AWS-credential-free.
+- `publish-images.yml` remains transitional and continues to depend on the shared GitHub OIDC provider until #206 proves the Jenkins publishing path and #207 removes the superseded workflow and OIDC dependency.
+- The reusable local Jenkins controller is implemented in the separate `AldrionDev/local-jenkins-platform` repository.
+- The external Jenkins platform provides:
+  - a reproducible Docker Compose controller;
+  - pinned Jenkins and Docker tool versions;
+  - pinned and security-checked plugins;
+  - Jenkins Configuration as Code;
+  - persistent `JENKINS_HOME`;
+  - localhost-only access;
+  - no published inbound agent port;
+  - trusted local Docker build access;
+  - startup, shutdown and status tooling;
+  - tested backup and bootable restore procedures.
+
+- `ci/jenkins/README.md` documents the ITAssetPulse-specific responsibility boundary, job naming, credential IDs, source checkout model and future pipeline ownership.
+- No ITAssetPulse Jenkinsfile, ECR publishing pipeline or Terraform execution pipeline exists yet. Those implementations remain owned by #206 and #208.
+- No AWS resource, Terraform state, HCP Terraform resource, GitHub Actions secret or credential value is changed by #204.
+- ECS Fargate + ALB remains the implemented Terraform target architecture. The `foundation`, `data` and `ecs` demo resources are not currently provisioned.

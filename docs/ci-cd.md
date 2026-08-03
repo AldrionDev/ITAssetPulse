@@ -8,12 +8,12 @@ It intentionally documents only what exists. Planned systems are named as planne
 
 ## Summary
 
-| Concern | Owner today |
-| ------- | ----------- |
-| Build, lint, test and Terraform validation | GitHub Actions (`ci.yml`) |
-| Container image publishing to Amazon ECR | GitHub Actions (`publish-images.yml`), transitional and manual |
-| AWS infrastructure and ECS service rollout | Terraform, executed manually with reviewed saved plans |
-| Application deployment from a workflow | **Nothing — no workflow deploys the application** |
+| Concern                                    | Owner today                                                    |
+| ------------------------------------------ | -------------------------------------------------------------- |
+| Build, lint, test and Terraform validation | GitHub Actions (`ci.yml`)                                      |
+| Container image publishing to Amazon ECR   | GitHub Actions (`publish-images.yml`), transitional and manual |
+| AWS infrastructure and ECS service rollout | Terraform, executed manually with reviewed saved plans         |
+| Application deployment from a workflow     | **Nothing — no workflow deploys the application**              |
 
 Workflow files currently in the repository:
 
@@ -63,14 +63,14 @@ npm run build
 Each job installs Terraform `~1.10.0` and runs `terraform fmt -check -recursive`, `terraform init -backend=false`
 and `terraform validate` for its scope:
 
-| Job | Scope |
-| --- | ----- |
-| `terraform-bootstrap-validate` | `infra/terraform/bootstrap` |
-| `terraform-account-validate` | `infra/terraform/account` |
-| `terraform-foundation-validate` | `infra/terraform/foundation`, plus `fmt -check` for `modules/network` and `modules/ecr-repository` |
-| `terraform-data-validate` | `infra/terraform/data` |
-| `terraform-ecs-fargate-service-validate` | `infra/terraform/modules/ecs-fargate-service` |
-| `terraform-ecs-validate` | `infra/terraform/ecs` |
+| Job                                      | Scope                                                                                              |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------- |
+| `terraform-bootstrap-validate`           | `infra/terraform/bootstrap`                                                                        |
+| `terraform-account-validate`             | `infra/terraform/account`                                                                          |
+| `terraform-foundation-validate`          | `infra/terraform/foundation`, plus `fmt -check` for `modules/network` and `modules/ecr-repository` |
+| `terraform-data-validate`                | `infra/terraform/data`                                                                             |
+| `terraform-ecs-fargate-service-validate` | `infra/terraform/modules/ecs-fargate-service`                                                      |
+| `terraform-ecs-validate`                 | `infra/terraform/ecs`                                                                              |
 
 `modules/network` and `modules/ecr-repository` are format-checked directly; their `terraform validate` is exercised
 through the `foundation` root stack that consumes them.
@@ -124,14 +124,18 @@ no effect on a running environment.
 - The demo infrastructure is **currently not provisioned**: the `foundation`, `data` and `ecs` resources do not
   exist in AWS. ECS Fargate + ALB is the implemented Terraform target architecture, not a running environment.
 - The future full rebuild of the demo environment is tracked by **#200**.
-- **HCP Terraform** for state and **Jenkins** for release and Terraform execution are planned under the
-  "Local Jenkins & HCP Terraform Migration v1" milestone. Neither is implemented.
+- The HCP Terraform project and four Local execution workspaces were created under #202. State migration from
+  the current S3 backend remains owned by #203.
+- The reusable local Jenkins controller is implemented in the separate
+  `AldrionDev/local-jenkins-platform` repository. ITAssetPulse-specific ECR publishing and Terraform execution
+  pipelines remain owned by #206 and #208.
 
 ---
 
 ## References
 
 - Target architecture and design of record: [`infrastructure-modularization-spec.md`](./infrastructure-modularization-spec.md)
-- Planned HCP Terraform and local Jenkins architecture (not yet implemented): [`infrastructure-hcp-jenkins-spec.md`](./infrastructure-hcp-jenkins-spec.md)
+- HCP Terraform and local Jenkins architecture and implementation status: [`infrastructure-hcp-jenkins-spec.md`](./infrastructure-hcp-jenkins-spec.md)
+- ITAssetPulse Jenkins integration and pipeline ownership: [`../ci/jenkins/README.md`](../ci/jenkins/README.md)
 - Apply / demo / destroy procedure: [`runbooks/ephemeral-demo-lifecycle.md`](./runbooks/ephemeral-demo-lifecycle.md)
 - Terraform stack layout, state keys and CI job mapping: [`../infra/terraform/README.md`](../infra/terraform/README.md)

@@ -1,6 +1,6 @@
 # IT Asset Pulse
 
-> Full-stack IT Asset Management demo application extended into a cloud-native DevOps portfolio project.  
+> Full-stack IT Asset Management demo application extended into a cloud-native DevOps portfolio project.
 > Built with NestJS, React, MongoDB Atlas, Docker, AWS ECS Fargate, ECR, and Terraform.
 
 ---
@@ -131,7 +131,9 @@ The earlier AWS deployment of this project is preserved in the baseline tag `inf
 - The current Terraform remote-state backend exists in AWS S3. Its retirement is tracked by issue #209.
 - The demo infrastructure (foundation, data and ECS resources) is currently **not provisioned**; ECS Fargate + ALB is the implemented Terraform target architecture, not a running environment.
 - The AWS infrastructure is currently being reviewed and redesigned.
-- A planned migration to HCP Terraform state storage and a local Docker-based Jenkins is specified in [`docs/infrastructure-hcp-jenkins-spec.md`](docs/infrastructure-hcp-jenkins-spec.md); neither is implemented yet.
+- The HCP Terraform project and four Local execution workspaces were created under #202, while Terraform state migration remains tracked by #203.
+- A reusable local Jenkins controller is implemented in the separate `AldrionDev/local-jenkins-platform` repository. ITAssetPulse-specific pipelines are not implemented yet.
+- The current architecture and responsibility boundary are documented in [`docs/infrastructure-hcp-jenkins-spec.md`](docs/infrastructure-hcp-jenkins-spec.md) and [`ci/jenkins/README.md`](ci/jenkins/README.md).
 
 This README intentionally does not include Terraform `apply`, `destroy`, or deployment instructions. The redesign is specified in [`docs/infrastructure-modularization-spec.md`](docs/infrastructure-modularization-spec.md).
 
@@ -154,7 +156,8 @@ Local, git-ignored Terraform artifacts (`terraform.tfvars`, `backend.hcl`, boots
 - GitHub Actions performs validation only: backend and frontend lint, test and build, plus AWS-free Terraform format, init and validate checks on pull requests and pushes to `main`.
 - A transitional, manually dispatched image-publishing workflow builds the backend and frontend images and pushes them to Amazon ECR under immutable full-SHA tags.
 - **No workflow currently deploys to AWS.** ECS infrastructure and service rollout are Terraform-owned and executed manually from a reviewed saved plan.
-- A Jenkins-based replacement for the release and Terraform execution path is planned, not implemented — see [`docs/infrastructure-hcp-jenkins-spec.md`](docs/infrastructure-hcp-jenkins-spec.md).
+- The reusable local Jenkins controller is implemented externally, but the ITAssetPulse ECR publishing and manually approved Terraform pipelines remain owned by #206 and #208.
+- Jenkins integration details and pipeline ownership are documented in [`ci/jenkins/README.md`](ci/jenkins/README.md).
 
 Full details: [`docs/ci-cd.md`](docs/ci-cd.md).
 
