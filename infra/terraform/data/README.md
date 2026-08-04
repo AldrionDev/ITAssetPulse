@@ -1,6 +1,14 @@
 # stack: data (remote state, ephemeral)
 
-External database wiring. Spec: §4.4. State key: `itassetpulse/demo/data.tfstate`.
+External database wiring. Spec: §4.4.
+State: HCP Terraform workspace `itassetpulse-data` (organization `gabor-toth-personalprojects`),
+Local execution mode. Cleanly initialized against HCP Terraform in #203; the former S3 state was verified
+empty beforehand and is a retained historical recovery copy only (retired by #209).
+
+> **This workspace has no state snapshot yet.** `terraform state list` therefore exits `1` with
+> `No state file was found!` rather than exiting `0` with no output — the workspace has *never* had a state
+> version, which is different from holding an empty one. That is expected and must not be "repaired": no
+> artificial empty state was uploaded. The first real `terraform apply` creates the first state version.
 
 ## What it creates
 
@@ -72,7 +80,7 @@ exclusively by the committed `.terraform.lock.hcl` — this README intentionally
 - The full `MONGO_URI` can land in the Terraform **state and in a saved plan file**.
 - Terraform's `sensitive = true` marking (used where applicable) only masks the normal CLI output — it does
   **not** redact a `terraform show -json` export of a plan or state, and does not encrypt the value at rest
-  beyond the state backend's own encryption (S3 SSE-S3, per the `bootstrap` stack).
+  beyond the state backend's own encryption (HCP Terraform encrypts stored state at rest).
 - Treat `tfplan`/`destroy.tfplan` and the remote state with the same care as a credential file.
 
 ## Read-only preflight (before every apply)
@@ -108,12 +116,12 @@ aws secretsmanager list-secrets \
 ## Order
 
 ```bash
+terraform login app.terraform.io                                               # once per machine
 cd infra/terraform/data
-cp backend.hcl.example backend.hcl                                             # fill in the bootstrap-created bucket
 cp ../environments/demo/data.tfvars.example ../environments/demo/data.tfvars   # fill in real Atlas project id / SRV host
 export MONGODB_ATLAS_CLIENT_ID=...
 export MONGODB_ATLAS_CLIENT_SECRET=...
-terraform init -backend-config=backend.hcl
+terraform init                                                                 # cloud block; no -backend-config
 terraform plan  -var-file=../environments/demo/data.tfvars -out=tfplan
 terraform apply "tfplan"
 ```
@@ -145,8 +153,8 @@ Post-destroy read-only verification:
 - the Atlas database user no longer exists;
 - the Secrets Manager secret is gone and not in a pending-deletion state (`recovery_window_in_days = 0`
   means immediate deletion, not scheduled);
-- `terraform state list` is empty;
-- no stale `.tflock` remains in the state bucket;
+- `terraform state list` reports no managed resource;
+- the `itassetpulse-data` HCP Terraform workspace is unlocked and has no active run;
 - `bootstrap` and `account` infrastructure are untouched;
 - the local `destroy.tfplan` is deleted after verification.
 

@@ -1,6 +1,14 @@
 # stack: ecs (remote state, ephemeral)
 
-The ECS Fargate application stack. Spec: §4.5. State key: `itassetpulse/demo/ecs.tfstate`.
+The ECS Fargate application stack. Spec: §4.5.
+State: HCP Terraform workspace `itassetpulse-ecs` (organization `gabor-toth-personalprojects`),
+Local execution mode. Cleanly initialized against HCP Terraform in #203; the former S3 state was verified
+empty beforehand and is a retained historical recovery copy only (retired by #209).
+
+> **This workspace has no state snapshot yet.** `terraform state list` therefore exits `1` with
+> `No state file was found!` rather than exiting `0` with no output — the workspace has *never* had a state
+> version, which is different from holding an empty one. That is expected and must not be "repaired": no
+> artificial empty state was uploaded. The first real `terraform apply` creates the first state version.
 
 Delivered in two increments: the core increment (#180) creates the cluster, ALB, routing, secrets, and
 services; this observability increment (#181) adds CloudWatch alarms, a dashboard, and SNS notification
@@ -47,8 +55,26 @@ the repo):
   consumer until the alarms existed (`docs/infrastructure-modularization-spec.md` §4.5, §6, §7.1 note this
   split).
 
-The S3 bucket used for these remote-state reads comes from `var.state_bucket` (not hardcoded — the bucket
-name embeds the AWS account ID, spec §8).
+Since #203 each read is a `terraform_remote_state` data source with `backend = "remote"` against the
+producer's HCP Terraform workspace (`itassetpulse-foundation`, `itassetpulse-data`, `itassetpulse-account`).
+There is no `"cloud"` backend for this data source — `"remote"` is the correct and only option. The
+`var.state_bucket` input is gone; nothing about these reads is region- or bucket-scoped any more.
+
+Access is granted per workspace: each of the three producers lists `itassetpulse-ecs` as its **only**
+remote-state consumer, and `itassetpulse-ecs` shares its state with nobody. No project-wide or
+organization-wide sharing is enabled.
+
+**Verified in #203 (Gate 8C).** A targeted, credential-free `terraform plan -target=data.terraform_remote_state.account`
+read exactly one data source and succeeded: the refreshed plan state contained exactly one matching
+`terraform_remote_state` object whose root-output map contains the `sns_topic_arn` key. The output *value*
+was never selected or displayed; no managed-resource change and no unrelated data-source read occurred; no
+AWS credential was available; no ECS state version was created. Two caveats worth keeping in mind:
+
+- In Local execution mode the authenticated user token also carries workspace permissions, so this
+  functional read is **not** isolated proof that the consumer grant alone enforced access. The HCP consumer
+  matrix is separately verified evidence for the sharing configuration.
+- `foundation` and `data` have verified ECS-only consumer grants, but **no output read is possible** until
+  those roots hold real state snapshots with outputs.
 
 ## Target group ownership
 
@@ -98,8 +124,8 @@ module is digest-pinned: `<repository-url>@<image-digest>`.
 `random_password.jwt_secret` (64 chars, `special = true`) → `aws_secretsmanager_secret.jwt` (`name_prefix`,
 `recovery_window_in_days = 0`) → `aws_secretsmanager_secret_version.jwt`. **Trade-off:** the secret value is
 plaintext in Terraform state. No write-only argument is used — the AWS provider supports one, but it is
-disproportionate complexity for a demo project. This is acceptable because the state bucket is encrypted,
-blocks public access, and is reachable only through narrow IAM (spec §9); the value is never output; and
+disproportionate complexity for a demo project. This is acceptable because HCP Terraform encrypts stored
+state at rest and access is limited to the organization's authenticated members; the value is never output; and
 this is the same pattern `data` already uses for the Mongo URI secret. The backend module's `secrets` map
 gets `MONGO_URI` (from the `data` remote state) and `JWT_SECRET` (created here); the frontend gets no
 secrets.
@@ -184,7 +210,8 @@ Three fixed (non-variable) CloudWatch alarms and one dashboard, defined in `obse
 
 ## Inputs / outputs
 
-- Inputs: `project_name`, `environment`, `common_tags`, `aws_region`, `state_bucket`, `release_sha`,
+- Inputs: `project_name`, `environment`, `common_tags`, `aws_region` (the region this ECS stack deploys
+  into — it no longer has anything to do with where remote state lives), `release_sha`,
   `frontend_container_port`, `backend_container_port`, `frontend_cpu`/`frontend_memory`,
   `backend_cpu`/`backend_memory`, `frontend_desired_count`, `backend_desired_count`,
   `backend_health_check_grace_period_seconds`, `log_retention_days`. See
@@ -206,10 +233,10 @@ versions of both.
 ## Order
 
 ```bash
+terraform login app.terraform.io                                            # once per machine
 cd infra/terraform/ecs
-cp backend.hcl.example backend.hcl                                          # fill in the bootstrap-created bucket
-cp ../environments/demo/ecs.tfvars.example ../environments/demo/ecs.tfvars  # fill in real state_bucket / release_sha
-terraform init -backend-config=backend.hcl
+cp ../environments/demo/ecs.tfvars.example ../environments/demo/ecs.tfvars  # fill in real release_sha
+terraform init                                                              # cloud block; no -backend-config
 terraform plan  -var-file=../environments/demo/ecs.tfvars -out=tfplan
 terraform apply "tfplan"
 ```
