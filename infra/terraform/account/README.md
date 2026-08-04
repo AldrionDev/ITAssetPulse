@@ -1,7 +1,15 @@
 # stack: account (remote state, persistent)
 
 Persistent account-level guardrails and CI identity that survive demo teardown. Spec: §4.2.
-State key: `itassetpulse/global/account.tfstate`.
+State: HCP Terraform workspace `itassetpulse-account` (organization `gabor-toth-personalprojects`),
+Local execution mode. Migrated from the former S3 backend in #203.
+
+> **Known drift — owned by #207.** The account state holds **seven** managed resources, including
+> `aws_iam_openid_connect_provider.github_actions[0]`. AWS no longer has that provider (it was removed
+> out-of-band), so a plan currently proposes re-creating it plus an in-place update of the dependent
+> `aws_iam_role.image_publish`. **Do not apply this stack while that drift is open** — #203 deliberately
+> preserved the resource unchanged, and #207 resolves it by removing it from the configuration rather than
+> by re-creating it in AWS.
 
 ## What it creates
 
@@ -22,6 +30,27 @@ State key: `itassetpulse/global/account.tfstate`.
 
 No IAM resource for the state-access contract, no VPC/ECR/Atlas/ECS/ALB resource, no application code, no
 image-publish workflow — all out of scope for this stack.
+
+## State baseline (verified in #203)
+
+Seven managed resources and five data-source addresses. All seven were migrated to HCP Terraform unchanged:
+
+```text
+aws_budgets_budget.monthly_cost
+aws_iam_openid_connect_provider.github_actions[0]
+aws_iam_role.image_publish
+aws_iam_role_policy.image_publish
+aws_sns_topic.budget_alerts
+aws_sns_topic_policy.budget_alerts
+aws_sns_topic_subscription.budget_alerts_email
+```
+
+> **Historical correction.** #201/#202/#203 planning documents stated that this state held *six* managed
+> resources. That figure was an inherited assumption, never verified against the state. The #203 Gate 4
+> preflight read the real state and found **seven**: the extra address is
+> `aws_iam_openid_connect_provider.github_actions[0]`, present because the real (git-ignored)
+> `terraform.tfvars` keeps `create_oidc_provider = true`. It was a legitimate managed member of the state
+> throughout #203 and was preserved unchanged; **#203 did not remove it**. Its removal belongs to #207.
 
 ## Inputs / outputs
 
@@ -114,12 +143,18 @@ Runtime-verification order after apply:
 Before destroying this stack, separately verify the subscription's confirmation status — an unconfirmed
 subscription cannot be properly removed by Terraform (see above).
 
-## State-access IAM contract (documentation only — no IAM resource beyond the image-publish role)
+## State access (no AWS IAM state contract any more)
 
-Any identity that runs a remote-state stack needs, on the state bucket and its objects, the same S3
-state/lock contract documented in `bootstrap/README.md` (§4.1): `s3:ListBucket`; `s3:GetObject` /
-`s3:PutObject` on the state object (no `s3:DeleteObject`); `s3:GetObject` / `s3:PutObject` /
-`s3:DeleteObject` on the lock object. No KMS permissions (SSE-S3).
+Since #203 the state lives in HCP Terraform, so no AWS IAM permission is needed to read or write it. An
+operator needs:
+
+- an HCP Terraform token obtained with `terraform login app.terraform.io`, stored outside the repository;
+- membership of the `gabor-toth-personalprojects` organization with access to the `itassetpulse-account`
+  workspace;
+- AWS credentials only for the *provider* operations (refresh/plan/apply against AWS), never for state.
+
+The former S3 state/lock IAM contract is historical and applies only to the `bootstrap` stack until #209
+retires it.
 
 ## IAM role recreation
 
@@ -132,10 +167,11 @@ to be free of downstream impact:
 
 ## Recovery / import (remote state lost or corrupted)
 
-The account state lives in S3 (versioned), unlike the bootstrap stack's local state:
+The account state lives in HCP Terraform, which keeps a full state-version history per workspace:
 
-1. Preferred: restore a prior **S3 object version** of `itassetpulse/global/account.tfstate`
-   (`aws s3api list-object-versions`, then copy the desired version back onto the current key).
+1. Preferred: roll back to a prior **HCP Terraform state version** of the `itassetpulse-account` workspace
+   from the workspace's *States* view. Any state rollback requires explicit approval and a separately
+   reviewed procedure — it is never routine.
 2. If that is not possible:
    1. import **all** relevant managed resources first (table below);
    2. only then run a single, full `terraform plan`;
@@ -169,21 +205,24 @@ recreate:
 
 ## Remote-state locking verification
 
-No dedicated, parallel test observing the short-lived `.tflock` object is required. The runtime
+HCP Terraform locks the workspace itself; there is no `.tflock` object to observe. The runtime
 verification instead confirms:
 
-- `use_lockfile = true` in `backend.hcl`;
-- a successful remote backend init (`terraform init -backend-config=backend.hcl`);
+- a successful `terraform init` against the `itassetpulse-account` workspace;
+- the workspace reports `locked = false` and no active run before starting;
 - a successful saved plan (`terraform plan -out=tfplan`);
-- the `itassetpulse/global/account.tfstate` state object exists in the bucket after apply;
-- no stale `.tflock` object remains after the operation completes;
-- a no-op plan (`terraform plan -detailed-exitcode`, exit `0`).
+- the workspace has a finalized current state version after apply;
+- a no-op plan (`terraform plan -detailed-exitcode`, exit `0`) — **currently not achievable** while the
+  #207 OIDC drift above is open; see that note before treating a non-zero exit code as a regression.
 
 ## Order
 
-Preflight (repeated before every apply) → `terraform init -backend-config=backend.hcl` →
-`terraform plan -out` → review → separate apply approval → apply. This stack does not depend on
-`foundation`/`data`/`ecs` (spec §6); future modifications (e.g., a `budget_limit_usd` change, a different
-`github_branch`) go through the same persistent state, no special reordering needed.
+Preflight (repeated before every apply) → `terraform init` → `terraform plan -out` → review → separate
+apply approval → apply. This stack does not depend on `foundation`/`data`/`ecs` (spec §6); future
+modifications (e.g., a `budget_limit_usd` change, a different `github_branch`) go through the same
+persistent state, no special reordering needed.
+
+The `aws s3api head-bucket` line in the preflight above is historical: it checked the S3 state bucket, which
+is no longer the state backend. It stays relevant only for `bootstrap` until #209.
 
 Implemented in: **#173**.

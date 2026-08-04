@@ -2,9 +2,14 @@
 
 Creates **only** the Terraform remote-state infrastructure. Spec: §4.1.
 
-This stack uses **local state** and creates nothing else. Every other stack (`account`, `foundation`,
-`data`, `ecs`) uses the S3 backend created here. Persistent guardrails (Budget, SNS, GitHub OIDC) live in the
-`account` stack, not here.
+This stack uses **local state** and creates nothing else. Persistent guardrails (Budget, SNS, GitHub OIDC)
+live in the `account` stack, not here.
+
+> **Status after #203.** `account`, `foundation`, `data` and `ecs` **no longer use the S3 bucket created
+> here** as their active backend — they use HCP Terraform Local execution workspaces, and their
+> `backend.hcl` workflow was removed by #203. This stack still uses local state and still owns the bucket,
+> which is retained as a historical recovery copy only. Everything below describes that historical model.
+> Retiring the bucket and this stack is **#209**.
 
 ## What it creates
 
@@ -14,13 +19,16 @@ This stack uses **local state** and creates nothing else. Every other stack (`ac
 - `aws_s3_bucket_public_access_block` — all four settings enabled.
 - `aws_s3_bucket_ownership_controls` — `BucketOwnerEnforced` (ACLs disabled).
 
-No DynamoDB table: remote-state stacks lock with the **S3 native lockfile** (`use_lockfile = true` in their
-`backend.hcl`), which writes a `<key>.tflock` object next to each state key in this same bucket.
+No DynamoDB table: while the four remote-state roots still used this bucket, they locked with the **S3 native
+lockfile** (`use_lockfile = true` in their `backend.hcl`), which wrote a `<key>.tflock` object next to each
+state key in this same bucket. Since #203 those roots lock through their HCP Terraform workspace instead.
 
 ## Inputs / outputs
 
 - Inputs (environment-agnostic): `project_name`, `aws_region`. See `terraform.tfvars.example`.
-- Outputs: `state_bucket_name`, `state_bucket_region`.
+- Outputs: `state_bucket_name`, `state_bucket_region`. Since #203 these are **historical/recovery context
+  only** — do **not** configure `account`, `foundation`, `data` or `ecs` from them. Those roots take their
+  backend from the `cloud` block committed in their own `backend.tf`.
 
 ### Bucket name
 
@@ -44,7 +52,8 @@ terraform plan
 terraform apply
 ```
 
-After apply, the other stacks point their `backend.hcl` `bucket` at `state_bucket_name`.
+Historically, the other stacks then pointed their `backend.hcl` `bucket` at `state_bucket_name`. That step is
+**obsolete**: since #203 they use HCP Terraform workspaces and have no `backend.hcl`.
 
 ### Back up the local state
 
@@ -69,9 +78,11 @@ uses (no wildcards):
 - `s3:PutBucketOwnershipControls`, `s3:GetBucketOwnershipControls`
 - `s3:PutBucketTagging`, `s3:GetBucketTagging`
 
-### 2. Downstream backend identity
+### 2. Downstream backend identity (historical — no longer required)
 
-Any identity that runs a remote-state stack, on the state bucket and its objects:
+This contract applied while the four remote-state roots used this bucket. Since #203 they authenticate to
+HCP Terraform instead and need no AWS permission for state at all. Kept for recovery context until #209.
+On the state bucket and its objects it required:
 
 - `s3:ListBucket` on `arn:aws:s3:::<state-bucket>` (optionally condition-scoped to the relevant key prefixes).
 - On the **state object** `arn:aws:s3:::<state-bucket>/<key>`: `s3:GetObject`, `s3:PutObject`. **No

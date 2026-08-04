@@ -44,9 +44,11 @@ architecture, which remains specified in
 
 **Status: CURRENT**
 
-- Terraform remote state for `account`, `foundation`, `data` and `ecs` lives in an AWS S3 bucket created and
-  owned by the `bootstrap` stack (`backend "s3" {}` in each root's `backend.tf`).
-- `bootstrap` itself uses local state and is the sole owner of the state bucket and its locking mechanism.
+- Terraform remote state for `account`, `foundation`, `data` and `ecs` lives in HCP Terraform (migrated by
+  #203; `cloud {}` in each root's `backend.tf`). The former AWS S3 bucket created and owned by the
+  `bootstrap` stack is a retained historical recovery copy only, no longer read or written.
+- `bootstrap` itself uses local state and remains the sole owner of the (now unused) state bucket and its
+  locking mechanism until #209 retires it.
 - GitHub Actions CI (`ci.yml`) is AWS-credential-free: it runs lint, test, build and `terraform fmt -check` /
   `terraform init -backend=false` / `terraform validate` only, with the backend disabled in every job.
 - `publish-images.yml` is the only workflow that authenticates to AWS. It is explicitly **transitional**: it
@@ -54,7 +56,7 @@ architecture, which remains specified in
   and ownership can change outside this repository at any time.
 - ECS Fargate + ALB is the **implemented Terraform target architecture** — the code exists — but the
   `foundation`, `data` and `ecs` demo resources are **currently not provisioned** in AWS.
-- The HCP Terraform project and four Local execution workspaces were created under #202. Terraform state migration remains owned by #203.
+- The HCP Terraform project and four Local execution workspaces were created under #202. Terraform state migration onto them (#203) is complete: HCP Terraform is now the active backend for `account`, `foundation`, `data` and `ecs`.
 - The reusable local Jenkins controller is implemented in the separate `AldrionDev/local-jenkins-platform` repository. ITAssetPulse-specific integration documentation is implemented under #204.
 - No ITAssetPulse Jenkins pipeline has been implemented yet; image publishing remains #206 and manually approved Terraform execution remains #208.
 
@@ -112,10 +114,10 @@ consequences for the target design:
 
 ## 6. HCP Terraform responsibilities
 
-**Status: CURRENT (project and workspaces) / PLANNED (state migration and Jenkins use)**
+**Status: CURRENT**
 
-- Will store the Terraform state and full state history for every active remote-state root (`account`,
-  `foundation`, `data`, `ecs`) after #203 replaces the AWS S3 backend.
+- Stores the Terraform state and full state history for every active remote-state root (`account`,
+  `foundation`, `data`, `ecs`) — #203 migrated them off the AWS S3 backend.
 - Does **not** execute Terraform runs. Every workspace uses Local execution mode (§7).
 - Provides the authentication surface (`terraform login` / `TF_TOKEN_app_terraform_io`) used locally and,
   once #208 lands, from Jenkins.
@@ -125,7 +127,7 @@ consequences for the target design:
 
 ## 7. Local execution mode
 
-**Status: CURRENT (workspace mode) / PLANNED (state migration and Jenkins execution)**
+**Status: CURRENT (workspace mode, state migration) / PLANNED (Jenkins execution)**
 
 Every HCP Terraform workspace ITAssetPulse uses runs in **Local execution mode**, not Remote or Agent
 execution:
@@ -158,21 +160,25 @@ workspace is created — the `bootstrap` stack is not migrated (§9).
 
 ## 9. Terraform root and state ownership
 
-**Status: PLANNED (target) / CURRENT (starting point)**
+**Status: CURRENT**
 
-| Root         | Current state            | Target state              | Notes                                                                                                         |
-| ------------ | ------------------------ | ------------------------- | ------------------------------------------------------------------------------------------------------------- |
-| `bootstrap`  | Local state, 5 resources | **Not migrated**          | Retired by #209 once HCP Terraform is proven; its only responsibility (the S3 state bucket) becomes obsolete. |
-| `account`    | S3, 6 managed resources  | `itassetpulse-account`    | The **only** currently non-empty remote state — the only root requiring a real state migration (#203).        |
-| `foundation` | S3, empty (0 resources)  | `itassetpulse-foundation` | Clean re-init against the new workspace; nothing to move.                                                     |
-| `data`       | S3, empty (0 resources)  | `itassetpulse-data`       | Clean re-init against the new workspace; nothing to move.                                                     |
-| `ecs`        | S3, empty (0 resources)  | `itassetpulse-ecs`        | Clean re-init against the new workspace; nothing to move.                                                     |
+| Root         | Former state              | Current state              | Notes                                                                                                         |
+| ------------ | -------------------------- | -------------------------- | ------------------------------------------------------------------------------------------------------------- |
+| `bootstrap`  | Local state, 5 resources   | **Not migrated**           | Retired by #209 once HCP Terraform is proven; its only responsibility (the S3 state bucket) becomes obsolete. |
+| `account`    | S3, **7** managed resources | `itassetpulse-account`     | Migrated in #203. The only root with a real state migration; all seven managed resources preserved unchanged. A pre-existing AWS drift on the OIDC provider resource was found and deferred to #207. |
+| `foundation` | S3, empty (0 resources)    | `itassetpulse-foundation`  | Cleanly re-initialized in #203; no state snapshot exists yet — nothing was there to move.                     |
+| `data`       | S3, empty (0 resources)    | `itassetpulse-data`        | Cleanly re-initialized in #203; no state snapshot exists yet — nothing was there to move.                     |
+| `ecs`        | S3, empty (0 resources)    | `itassetpulse-ecs`         | Cleanly re-initialized in #203; no state snapshot exists yet — nothing was there to move.                     |
+
+> **Historical correction.** This table previously read "6 managed resources" for `account`. That figure was
+> an unverified planning assumption inherited from #201. #203's Gate 4 preflight read the real state and
+> found **seven** — the extra address is `aws_iam_openid_connect_provider.github_actions[0]`, a legitimate
+> managed member of the state that #203 preserved unchanged. Its removal belongs to #207, not #203.
 
 `ecs` reads outputs from `account` (SNS topic ARN, observability increment), `foundation` (VPC/ECR outputs)
 and `data` (Secrets Manager secret ARN) via `terraform_remote_state`, matching the dependency graph in
 [`infrastructure-modularization-spec.md` §6](./infrastructure-modularization-spec.md#6-state-keys-and-dependency-graph).
-Under HCP Terraform this becomes a `backend = "remote"` read against the corresponding HCP workspace instead
-of an S3 key.
+Since #203 this is a `backend = "remote"` read against the corresponding HCP workspace instead of an S3 key.
 
 ---
 
@@ -478,9 +484,13 @@ unfinished work remains owned by the referenced follow-up issues.
 
 **Status: CURRENT**
 
-At the completion of issue #204:
+At the completion of issue #203:
 
-- Terraform state for `account`, `foundation`, `data` and `ecs` remains in the AWS S3 backend owned by `bootstrap`. Migration to HCP Terraform remains owned by #203.
+- Terraform state for `account`, `foundation`, `data` and `ecs` is now in HCP Terraform. #203 migrated the
+  `account` state (seven managed resources, preserved unchanged) and cleanly initialized the three empty
+  roots. The former AWS S3 backend owned by `bootstrap` is a retained historical recovery copy only, not
+  read or written after migration; its retirement together with `bootstrap` remains owned by #209. A
+  pre-existing AWS drift on the `account` OIDC provider was found during migration and deferred to #207.
 - The HCP Terraform project and four CLI-driven Local execution workspaces were created and verified under #202:
   - `itassetpulse-account`;
   - `itassetpulse-foundation`;

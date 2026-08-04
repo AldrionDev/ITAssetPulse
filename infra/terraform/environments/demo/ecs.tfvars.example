@@ -3,10 +3,6 @@ project_name = "itassetpulse"
 environment  = "demo"
 aws_region   = "eu-north-1" # example — confirm per spec §16
 
-# Name of the bucket created by the bootstrap stack (contains the AWS account
-# ID; never hardcoded in .tf, see variables.tf):
-state_bucket = "<your-terraform-state-bucket>"
-
 # Full Git commit SHA of the images published by publish-images.yml (spec §10.2):
 release_sha = "<git-commit-sha>"
 

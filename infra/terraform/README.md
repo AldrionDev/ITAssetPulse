@@ -3,15 +3,14 @@
 Modular Terraform for the ITAssetPulse ephemeral demo. Design of record:
 [`docs/infrastructure-modularization-spec.md`](../../docs/infrastructure-modularization-spec.md).
 
-> The S3 remote-state backend and apply model described below are being migrated to HCP Terraform and a local
-> Jenkins execution model; see
-> [`docs/infrastructure-hcp-jenkins-spec.md`](../../docs/infrastructure-hcp-jenkins-spec.md) for the planned
-> target architecture. That broader migration is still in progress.
+> **HCP Terraform is the active and authoritative state backend** for `account`, `foundation`, `data` and
+> `ecs` (#203) — see [`docs/runbooks/hcp-terraform-workspaces.md`](../../docs/runbooks/hcp-terraform-workspaces.md)
+> for the executed migration record. The former S3 state objects are retained historical recovery copies
+> only; they are no longer read or written, and retiring them together with the `bootstrap` stack is #209.
 >
-> The HCP Terraform project and its four workspaces listed below have been created and verified empty (#202)
-> — see [`docs/runbooks/hcp-terraform-workspaces.md`](../../docs/runbooks/hcp-terraform-workspaces.md). No
-> Terraform state has been migrated onto them yet: the S3 backend and the state-key table below remain
-> authoritative until #203.
+> The broader move to a local Jenkins execution model is still in progress; see
+> [`docs/infrastructure-hcp-jenkins-spec.md`](../../docs/infrastructure-hcp-jenkins-spec.md) for the target
+> architecture.
 
 > **The modular Terraform roots are implemented. The `foundation`, `data` and ECS demo resources are currently
 > not provisioned in AWS. Any future mutation requires a reviewed saved plan and explicit approval.**
@@ -37,32 +36,33 @@ infra/terraform/
     demo/                    # per-stack *.tfvars for the demo environment
 ```
 
-## State-key convention
+## State backend convention
 
-Remote state lives in the S3 bucket created by `bootstrap`. Each remote-state root stack uses a distinct key
-via its own `backend.hcl` (partial backend config):
+Each remote-state root stack stores its state in its own HCP Terraform workspace, declared by a `cloud`
+block in the stack's `backend.tf`. Organization: `gabor-toth-personalprojects`.
 
-| Stack | State | Key |
-|-------|-------|-----|
-| `bootstrap` | local | — (creates the bucket) |
-| `account` | remote | `itassetpulse/global/account.tfstate` |
-| `foundation` | remote | `itassetpulse/demo/foundation.tfstate` |
-| `data` | remote | `itassetpulse/demo/data.tfstate` |
-| `ecs` | remote | `itassetpulse/demo/ecs.tfstate` |
-| `eks` (later) | remote | `itassetpulse/demo/eks.tfstate` |
+| Stack | State | HCP workspace | Execution mode |
+|-------|-------|---------------|----------------|
+| `bootstrap` | local | — | — (local state; retired by #209) |
+| `account` | HCP Terraform | `itassetpulse-account` | Local (CLI-driven) |
+| `foundation` | HCP Terraform | `itassetpulse-foundation` | Local (CLI-driven) |
+| `data` | HCP Terraform | `itassetpulse-data` | Local (CLI-driven) |
+| `ecs` | HCP Terraform | `itassetpulse-ecs` | Local (CLI-driven) |
 
-## HCP Terraform workspace inventory (empty, prepared by #202)
+**Local execution mode** means HCP Terraform stores the state and its version history; `plan` and `apply`
+still run on the operator's machine (or, later, on the local Jenkins). HCP Terraform never executes a run.
 
-| Stack | HCP workspace | Execution mode |
-|-------|---------------|----------------|
-| `account` | `itassetpulse-account` | Local (CLI-driven) |
-| `foundation` | `itassetpulse-foundation` | Local (CLI-driven) |
-| `data` | `itassetpulse-data` | Local (CLI-driven) |
-| `ecs` | `itassetpulse-ecs` | Local (CLI-driven) |
+Remote-state sharing is least-privilege: `itassetpulse-account`, `itassetpulse-foundation` and
+`itassetpulse-data` each list `itassetpulse-ecs` as their only remote-state consumer, and `itassetpulse-ecs`
+shares its state with nobody. No workspace uses project-wide or organization-wide sharing.
+
+> Historical: before #203 these four roots used an S3 backend with per-stack keys
+> (`itassetpulse/global/account.tfstate`, `itassetpulse/demo/{foundation,data,ecs}.tfstate`) supplied through
+> a git-ignored `backend.hcl`. Those state objects are retained recovery copies only and are no longer used;
+> the `backend.hcl` workflow and the `backend.hcl.example` files are gone.
 
 See [`docs/runbooks/hcp-terraform-workspaces.md`](../../docs/runbooks/hcp-terraform-workspaces.md) for the
-project, remote-state-sharing configuration and token lifecycle. State migration onto these workspaces is
-#203.
+project, the sharing configuration, the token lifecycle and the executed migration record.
 
 ## Environment convention
 
@@ -70,27 +70,31 @@ project, remote-state-sharing configuration and token lifecycle. State migration
 - Environment-scoped stacks (`foundation`, `data`, `ecs`) take `project_name`, `environment`, `common_tags`,
   and read their values from `environments/<env>/<stack>.tfvars`.
 - `bootstrap` and `account` are environment-agnostic (account/region-scoped) and keep their own tfvars.
-- Real `*.tfvars`, `backend.hcl`, state files, and `.terraform/` are git-ignored; only `*.example` files are
-  tracked.
+- Real `*.tfvars`, state files, and `.terraform/` are git-ignored; only `*.example` files are tracked. There
+  is no `backend.hcl` any more — the `cloud` block carries the full backend configuration.
 
 ## Run conventions (only once a stack's implementation issue has added its `.tf`)
 
 ```bash
+terraform login app.terraform.io              # once per machine; token stored outside the repository
 cd infra/terraform/<stack>
-cp backend.hcl.example backend.hcl            # then edit (bootstrap uses local state — no backend.hcl)
-terraform init -backend-config=backend.hcl
+terraform init                                # no -backend-config; the cloud block is complete
 terraform fmt -check
 terraform validate
 terraform plan  -var-file=../environments/demo/<stack>.tfvars
 terraform apply -var-file=../environments/demo/<stack>.tfvars
 ```
 
+`bootstrap` keeps local state and takes no `terraform login` or `cloud` block.
+
 Apply / dependency order: `bootstrap → account → foundation → data → (publish images) → ecs`. See spec §13.
 
 ## CI validation
 
-`.github/workflows/ci.yml` runs AWS-free quality gates on every pull request and push to `main` — no AWS
-credentials are ever configured in CI. Each currently-implemented root stack has its own job running
+`.github/workflows/ci.yml` runs credential-free quality gates on every pull request and push to `main` —
+**neither AWS nor HCP Terraform credentials are ever configured in CI**. `terraform init -backend=false`
+skips *backend or HCP Terraform initialization*, so the `cloud` blocks do not make CI reach
+`app.terraform.io`. Each currently-implemented root stack has its own job running
 `terraform fmt -check -recursive`, `terraform init -backend=false -lockfile=readonly`, and `terraform
 validate`:
 

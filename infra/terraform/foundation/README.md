@@ -1,6 +1,14 @@
 # stack: foundation (remote state, ephemeral)
 
-Platform-agnostic base for compute. Spec: §4.3. State key: `itassetpulse/demo/foundation.tfstate`.
+Platform-agnostic base for compute. Spec: §4.3.
+State: HCP Terraform workspace `itassetpulse-foundation` (organization `gabor-toth-personalprojects`),
+Local execution mode. Cleanly initialized against HCP Terraform in #203; the former S3 state was verified
+empty beforehand and is a retained historical recovery copy only (retired by #209).
+
+> **This workspace has no state snapshot yet.** `terraform state list` therefore exits `1` with
+> `No state file was found!` rather than exiting `0` with no output — the workspace has *never* had a state
+> version, which is different from holding an empty one. That is expected and must not be "repaired": no
+> artificial empty state was uploaded. The first real `terraform apply` creates the first state version.
 
 ## What it creates
 
@@ -24,10 +32,10 @@ Platform-agnostic base for compute. Spec: §4.3. State key: `itassetpulse/demo/f
 ## Order
 
 ```bash
+terraform login app.terraform.io                                    # once per machine
 cd infra/terraform/foundation
-cp backend.hcl.example backend.hcl                                  # fill in the bootstrap-created bucket
 cp ../environments/demo/foundation.tfvars.example ../environments/demo/foundation.tfvars
-terraform init -backend-config=backend.hcl
+terraform init                                                      # cloud block; no -backend-config
 terraform plan  -var-file=../environments/demo/foundation.tfvars -out=tfplan
 terraform apply "tfplan"
 ```
