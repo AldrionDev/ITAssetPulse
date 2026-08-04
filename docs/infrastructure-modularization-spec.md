@@ -121,10 +121,13 @@ Five active stacks (`bootstrap`, `account`, `foundation`, `data`, `ecs`) plus a 
 
 ### 4.1 `bootstrap` — local state, one-time, persistent
 
-> **Superseded by the planned target model.** The AWS S3 state backend described in this section is planned to
-> be replaced by HCP Terraform state storage, and `bootstrap` is planned to be retired rather than migrated.
-> See [`infrastructure-hcp-jenkins-spec.md`](./infrastructure-hcp-jenkins-spec.md) for the target model. This
-> section remains accurate for the **current** implementation.
+> **Superseded by the executed target model.** #203 replaced the AWS S3 state backend described in this
+> section with HCP Terraform state storage for `account`, `foundation`, `data` and `ecs`. `bootstrap` itself
+> was **not** migrated — it keeps local state and is retired outright by #209, once its only remaining
+> responsibility (the now-unused S3 state bucket) is no longer needed. See
+> [`infrastructure-hcp-jenkins-spec.md`](./infrastructure-hcp-jenkins-spec.md) and
+> [`docs/runbooks/hcp-terraform-workspaces.md`](./runbooks/hcp-terraform-workspaces.md) for the executed
+> model. This section is kept only as the **historical** description of how the S3 backend worked.
 
 Creates **only** the Terraform remote-state infrastructure:
 
@@ -335,18 +338,17 @@ lookup, release-SHA selection, JWT secret, alarms, dashboard, SNS wiring) stays 
 
 ## 6. State keys and dependency graph
 
-> **Superseded by the planned target model.** The S3 state keys below are planned to be replaced by HCP
-> Terraform workspaces (`itassetpulse-account`, `itassetpulse-foundation`, `itassetpulse-data`,
-> `itassetpulse-ecs`), one per remote-state root. See
-> [`infrastructure-hcp-jenkins-spec.md`](./infrastructure-hcp-jenkins-spec.md). The dependency graph itself
-> (which stack reads which other stack's outputs) is unaffected by the backend change and remains accurate.
-
-State bucket and locking are created by `bootstrap` (local state). All other stacks use the S3 backend with a
-distinct key configured through a per-stack `backend.hcl`.
+> **Superseded by the executed target model.** #203 replaced the S3 state keys below with HCP Terraform
+> workspaces (`itassetpulse-account`, `itassetpulse-foundation`, `itassetpulse-data`, `itassetpulse-ecs`),
+> one per remote-state root — see
+> [`docs/runbooks/hcp-terraform-workspaces.md`](./runbooks/hcp-terraform-workspaces.md) for the executed
+> migration record. The dependency graph itself (which stack reads which other stack's outputs) is
+> unaffected by the backend change and remains accurate. The S3 keys below are kept only as a **historical**
+> record of the pre-#203 backend.
 
 ```
-State keys:
-  bootstrap                          -> local state
+Historical S3 state keys (superseded by #203):
+  bootstrap                          -> local state (unchanged; bootstrap was not migrated)
   itassetpulse/global/account.tfstate
   itassetpulse/demo/foundation.tfstate
   itassetpulse/demo/data.tfstate
@@ -379,8 +381,10 @@ state, not copied from bootstrap.
 
 ## 7. Variables and outputs
 
-Repository contains only `*.tfvars.example` and `backend.hcl.example`. Real `*.tfvars`, `backend.hcl`, state
-files, and `.terraform/` remain git-ignored and are never committed.
+Repository contains only `*.tfvars.example` files. Real `*.tfvars`, state files, and `.terraform/` remain
+git-ignored and are never committed. `backend.hcl` / `backend.hcl.example` no longer exist for `account`,
+`foundation`, `data` and `ecs` — since #203 their backend configuration is a complete `cloud {}` block
+committed in `backend.tf`, needing no local override file.
 
 Environment layout:
 

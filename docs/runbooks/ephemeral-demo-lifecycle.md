@@ -74,17 +74,16 @@ reviewed OIDC drift reconciliation in Gate B.
 
 ## 5. Required ignored runtime files
 
-Per stack, a real (gitignored) `backend.hcl` and, where applicable, real
-`environments/demo/*.tfvars` must already exist locally — these are never
-committed (see `.gitignore`: `backend.hcl`, `*.tfvars` with
-`!*.tfvars.example`, `**/.terraform/*`, `*.tfstate*`). This runbook assumes
-they are already in place; it does not create or copy them.
+Since #203, `account`, `foundation`, `data` and `ecs` authenticate to their HCP Terraform workspace via
+`terraform login app.terraform.io` — there is no `backend.hcl` for these roots any more. Per stack, real
+(gitignored) `environments/demo/*.tfvars` must already exist locally where applicable — these are never
+committed (see `.gitignore`: `*.tfvars` with `!*.tfvars.example`, `**/.terraform/*`, `*.tfstate*`). This
+runbook assumes they are already in place; it does not create or copy them.
 
 ```bash
+# HCP Terraform authentication check, never print the token:
+[ -s ~/.terraform.d/credentials.tfrc.json ] && echo "HCP Terraform credential present" || echo "MISSING: run terraform login app.terraform.io"
 # Presence-only check, never print contents:
-for stack in account data ecs foundation; do
-  [ -f "infra/terraform/$stack/backend.hcl" ] && echo "$stack: backend.hcl present" || echo "$stack: MISSING backend.hcl"
-done
 for f in foundation data ecs; do
   [ -f "infra/terraform/environments/demo/$f.tfvars" ] && echo "$f.tfvars present" || echo "MISSING $f.tfvars"
 done

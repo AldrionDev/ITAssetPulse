@@ -128,10 +128,10 @@ The earlier AWS deployment of this project is preserved in the baseline tag `inf
 
 **Current status:**
 
-- The current Terraform remote-state backend exists in AWS S3. Its retirement is tracked by issue #209.
+- **HCP Terraform is the active Terraform state backend** for `account`, `foundation`, `data` and `ecs` (migrated in #203). The former AWS S3 backend is a retained historical recovery copy only; its retirement together with the `bootstrap` stack is tracked by issue #209.
 - The demo infrastructure (foundation, data and ECS resources) is currently **not provisioned**; ECS Fargate + ALB is the implemented Terraform target architecture, not a running environment.
 - The AWS infrastructure is currently being reviewed and redesigned.
-- The HCP Terraform project and four Local execution workspaces were created under #202, while Terraform state migration remains tracked by #203.
+- The HCP Terraform project and four Local execution workspaces were created under #202; the state migration onto them is #203. A pre-existing AWS drift on the `account` OIDC provider was found during migration and is tracked for resolution by #207.
 - A reusable local Jenkins controller is implemented in the separate `AldrionDev/local-jenkins-platform` repository. ITAssetPulse-specific pipelines are not implemented yet.
 - The current architecture and responsibility boundary are documented in [`docs/infrastructure-hcp-jenkins-spec.md`](docs/infrastructure-hcp-jenkins-spec.md) and [`ci/jenkins/README.md`](ci/jenkins/README.md).
 
